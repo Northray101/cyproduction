@@ -1,679 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Guides - CY Production</title>
-<link rel="icon" type="image/png" href="cy.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <title>Guides — CY Production</title>
+  <link rel="icon" type="image/png" href="cy.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="portal.css">
 
-<style>
-:root{
-  --bg:#0b0e14;
-  --text:#ffffff;
-  --muted:#b0b6cc;
-  --accent:#4da3ff;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --gap:22px;
-  --max:1600px;
-  --soft:cubic-bezier(.25, .8, .25, 1);
-  --spring:cubic-bezier(.19,1,.22,1);
-}
+  <style>
+    /* ── Search Bar ──────────────────────────────────────────── */
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      margin-right: 8px;
+      z-index: 210;
+    }
 
-*{box-sizing:border-box;margin:0;padding:0;font-family:"Helvetica Neue", Helvetica, Arial, sans-serif}
+    .search-capsule {
+      display: flex;
+      align-items: center;
+      width: 36px;
+      height: 36px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: width 0.36s var(--ease-spring), border-color 0.22s ease, background 0.22s ease;
+    }
+    .search-capsule.expanded {
+      width: 220px;
+      border-color: rgba(79, 168, 255, 0.5);
+      background: rgba(0, 0, 0, 0.45);
+      cursor: text;
+    }
+    .search-icon-btn {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 15px;
+      transition: color 0.2s ease;
+    }
+    .search-capsule.expanded .search-icon-btn { color: var(--accent); }
+    .search-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      outline: none;
+      padding-right: 14px;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .search-capsule.expanded .search-field { opacity: 1; }
 
-html, body{
-  min-height:100%;
-  background-color:var(--bg);
-  background-image:
-    radial-gradient(circle at 50% 0%, #1a2236, transparent 60%),
-    radial-gradient(circle at 80% 20%, rgba(77, 163, 255, 0.08), transparent 40%);
-  color:var(--text);
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
+    /* Full-width search on mobile */
+    @media (max-width: 768px) {
+      .search-wrapper {
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        margin: 0;
+      }
+      .search-capsule.expanded {
+        position: fixed;
+        inset: 0 0 auto 0;
+        width: 100%;
+        height: 58px;
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid rgba(79, 168, 255, 0.4);
+        background: rgba(8, 11, 17, 0.97);
+        z-index: 9000;
+        padding: 0 8px;
+      }
+    }
 
-/* Glassmorphism */
-.glass-panel {
-  padding: 40px;
-  border-radius: 24px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  border-top: 1px solid var(--glass-highlight);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  margin-bottom: 40px;
-  overflow: hidden;
-}
+    /* ── Chat Overlay ────────────────────────────────────────── */
+    #chatOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(8, 11, 17, 0.93);
+      backdrop-filter: blur(24px);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.97) translateY(8px);
+      transition: opacity 0.32s var(--ease-soft), transform 0.32s var(--ease-spring);
+    }
+    #chatOverlay.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+    }
 
-/* Header */
-header{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background: rgba(11, 14, 20, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-bottom:1px solid var(--glass-border);
-}
-.header-inner{
-  max-width:var(--max);
-  margin:auto;
-  padding:0 24px;
-  height: 70px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap: 20px;
-  position: relative;
-}
-.brand{
-  font-size:22px;
-  font-weight:700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  z-index: 102;
-}
+    .chat-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      flex-shrink: 0;
+    }
+    .chat-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+    .chat-title .dot-accent { color: var(--accent); font-size: 18px; }
 
-/* Nav */
-.nav-scroll-area {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
-  z-index: 101;
-}
-.nav{
-  display:flex;
-  gap:6px;
-  padding: 5px;
-  background: rgba(255,255,255,0.02);
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  position: relative;
-}
-.nav button{
-  position: relative;
-  background:transparent;
-  border:none;
-  color:var(--muted);
-  padding:8px 24px;
-  border-radius:999px;
-  cursor:pointer;
-  font-weight:500;
-  font-size: 14px;
-  white-space: nowrap;
-  transition: color 0.3s ease;
-  z-index: 2;
-  outline: none;
-}
-.nav button:hover{ color: #fff; }
-.nav button.active{ color:#fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+    .chat-controls { display: flex; gap: 8px; }
+    .ctrl-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition-base), color var(--transition-base);
+      line-height: 1;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.14); color: var(--text); }
 
-/* Active Pill */
-.nav-bg {
-  position: absolute;
-  top: 5px;
-  left: 0;
-  height: calc(100% - 10px);
-  background: linear-gradient(135deg, var(--accent), #2b7bc6);
-  border-radius: 999px;
-  z-index: 1;
-  transition: all 0.5s var(--spring); 
-  box-shadow: 0 4px 15px rgba(77, 163, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
-  opacity: 0;
-  pointer-events: none;
-}
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+    .chat-body::-webkit-scrollbar { width: 4px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 4px; }
 
-/* SEARCH BAR */
-.search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
-  margin-left: auto;
-  z-index: 200;
-}
-.search-input-container {
-  width: 40px; 
-  height: 40px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  transition: width 0.4s var(--spring), background 0.3s;
-  overflow: hidden;
-  cursor: pointer;
-}
-.search-input-container.expanded {
-  width: 240px;
-  background: rgba(0,0,0,0.5);
-  cursor: text;
-  border-color: var(--accent);
-}
-.search-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--muted);
-}
-.search-field {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  padding-right: 16px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.search-input-container.expanded .search-field {
-  opacity: 1;
-}
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-/* Hamburger */
-.menu-wrapper { position: relative; z-index: 300; }
-.hamburger{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  cursor:pointer;
-  padding: 10px;
-  margin-right: -10px;
-}
-.hamburger div{
-  width:24px;
-  height:2px;
-  background:var(--text);
-  border-radius:2px;
-  transition:.3s ease;
-}
-.menu-dropdown {
-  position: absolute;
-  top: calc(100% + 15px);
-  right: 0;
-  width: 200px;
-  background: rgba(15, 20, 30, 0.98);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 8px;
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: 0.3s ease;
-}
-.menu-dropdown.show { display: flex; opacity: 1; transform: translateY(0); }
-.menu-dropdown a {
-  text-decoration: none;
-  color: var(--muted);
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  transition: 0.2s;
-}
-.menu-dropdown a:active, .menu-dropdown a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .msg {
+      max-width: 78%;
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: 14.5px;
+      line-height: 1.55;
+      word-wrap: break-word;
+      animation: msg-in 0.25s var(--ease-soft) both;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #000;
+      font-weight: 500;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.07);
+      color: #dde3f0;
+      border: 1px solid var(--glass-border);
+      border-bottom-left-radius: 4px;
+      min-width: 44px;
+    }
+    .chat-system {
+      align-self: center;
+      font-size: 12.5px;
+      color: var(--muted);
+      font-style: italic;
+      animation: msg-in 0.25s var(--ease-soft) both;
+    }
 
-/* CHAT OVERLAY */
-#chatOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(11, 14, 20, 0.95);
-  backdrop-filter: blur(20px);
-  z-index: 9000;
-  display: flex;
-  flex-direction: column;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease, transform 0.4s var(--soft);
-  transform: scale(0.95);
-  padding: 0;
-  overflow: hidden;
-}
-#chatOverlay.active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-#chatOverlay.minimized {
-  top: auto;
-  bottom: 20px;
-  left: auto;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--accent);
-  padding: 0;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-#chatOverlay.minimized > * { display: none; }
-#chatOverlay.minimized::after {
-  content: "✨";
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  font-size: 24px;
-}
+    /* Word-by-word reveal */
+    .word {
+      display: inline;
+      white-space: pre-wrap;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .word.show { opacity: 1; }
 
-.chat-header {
-  padding: 16px 24px;
-  background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid var(--glass-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.chat-title { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
-.chat-controls { display: flex; gap: 12px; }
-.control-btn {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: background 0.2s;
-}
-.control-btn:hover { background: rgba(255,255,255,0.25); }
+    /* Typing dots */
+    .typing {
+      display: inline-flex;
+      gap: 4px;
+      padding: 2px;
+    }
+    .typing span {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce-dot 1.3s infinite ease-in-out both;
+    }
+    .typing span:nth-child(1) { animation-delay: -0.3s; }
+    .typing span:nth-child(2) { animation-delay: -0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0s; }
 
-.chat-body {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  scroll-behavior: smooth;
-}
+    .chat-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .chat-input-row { display: flex; gap: 10px; align-items: center; }
+    .chat-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      padding: 11px 18px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .chat-input:focus { border-color: rgba(79, 168, 255, 0.5); }
+    .send-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #000;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.18s var(--ease-snap), opacity 0.2s ease;
+    }
+    .send-btn:hover { transform: scale(1.08); }
+    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .cooldown-note {
+      font-size: 12px;
+      color: var(--danger);
+      text-align: center;
+      height: 16px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
 
-@keyframes messageSlideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    /* ── Guide Selector ──────────────────────────────────────── */
+    .role-selector {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      border-radius: var(--r-md);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 24px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238892aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+      transition: border-color 0.2s ease;
+    }
+    .role-selector:hover { border-color: rgba(255,255,255,0.15); }
+    .role-selector:focus { border-color: rgba(79,168,255,0.5); }
+    .role-selector option { background: #0d1119; }
 
-.message {
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 15px;
-  line-height: 1.5;
-  position: relative;
-  word-wrap: break-word;
-  animation: messageSlideUp 0.3s ease-out forwards;
-}
-.message.user {
-  align-self: flex-end;
-  background: var(--accent);
-  color: #000;
-  font-weight: 500;
-  border-bottom-right-radius: 4px;
-}
-.message.ai {
-  align-self: flex-start;
-  background: rgba(255,255,255,0.08);
-  color: #e0e0e0;
-  border-bottom-left-radius: 4px;
-  border: 1px solid var(--glass-border);
-  min-width: 40px; 
-}
+    /* ── Guide Content ───────────────────────────────────────── */
+    .guide-content {
+      color: #dde3f0;
+      line-height: 1.72;
+      transition: opacity 0.35s ease;
+    }
+    .guide-content h2 {
+      color: var(--accent);
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+    .guide-content h3 {
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 24px 0 10px;
+    }
+    .guide-content p { margin-bottom: 14px; }
+    .guide-content ul { padding-left: 20px; margin-bottom: 14px; }
+    .guide-content li { margin-bottom: 8px; }
+    .guide-content a { color: var(--accent); }
+    .guide-content strong { font-weight: 600; color: var(--text); }
 
-/* Word animation */
-.word-fade {
-  opacity: 0;
-  display: inline-block;
-  white-space: pre-wrap;
-  transform: translateY(5px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.word-fade.visible { opacity: 1; transform: translateY(0); }
+    /* ── Camera Visualizer ───────────────────────────────────── */
+    .cam-visualizer {
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-md);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-/* Bouncing Dots Loader */
-.typing-dots {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-}
-.typing-dots span {
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
+    /* Subtle grid */
+    .cam-visualizer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
 
-.chat-footer {
-  padding: 16px 24px;
-  border-top: 1px solid var(--glass-border);
-  background: rgba(0,0,0,0.2);
-  display: flex;
-  gap: 12px;
-}
-.chat-input {
-  flex-grow: 1;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  padding: 12px 20px;
-  color: #fff;
-  font-size: 15px;
-  outline: none;
-  transition: border 0.2s;
-}
-.chat-input:focus { border-color: var(--accent); }
-.send-btn {
-  background: var(--accent);
-  color: #000;
-  border: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  transition: transform 0.2s;
-}
-.send-btn:hover { transform: scale(1.05); }
-.send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .cam-subject {
+      width: 12px; height: 12px;
+      background: var(--muted);
+      border-radius: 50%;
+      position: absolute;
+      z-index: 1;
+      box-shadow: 0 0 10px rgba(136,146,170,0.5);
+    }
+    .cam-reticle {
+      width: 76px; height: 48px;
+      border: 2px solid var(--accent);
+      border-radius: 5px;
+      position: absolute;
+      box-shadow: 0 0 18px var(--accent-glow);
+      z-index: 2;
+    }
+    /* Corner brackets */
+    .cam-reticle::before,
+    .cam-reticle::after {
+      content: '';
+      position: absolute;
+      width: 10px; height: 10px;
+      border: 2px solid #fff;
+    }
+    .cam-reticle::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+    .cam-reticle::after  { bottom: -2px; right: -2px; border-left: none; border-top: none; }
 
-.cooldown-msg {
-  text-align: center;
-  font-size: 12px;
-  color: #ff7a7a;
-  margin-top: 8px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
+    /* Animations */
+    @keyframes fig8 {
+      0%     { transform: translate(0, 0); }
+      12.5%  { transform: translate(11px, -6px); }
+      25%    { transform: translate(22px, 0); }
+      37.5%  { transform: translate(11px, 6px); }
+      50%    { transform: translate(0, 0); }
+      62.5%  { transform: translate(-11px, -6px); }
+      75%    { transform: translate(-22px, 0); }
+      87.5%  { transform: translate(-11px, 6px); }
+      100%   { transform: translate(0, 0); }
+    }
+    @keyframes arc {
+      0%   { transform: translate(-28px, 5px) scale(1); }
+      50%  { transform: translate(28px, -5px) scale(1.04); }
+      100% { transform: translate(-28px, 5px) scale(1); }
+    }
 
-/* System messages in chat */
-.chat-system-msg {
-  align-self: center;
-  font-size: 13px;
-  color: var(--muted);
-  font-style: italic;
-  margin: 8px 0;
-  opacity: 0.8;
-  animation: messageSlideUp 0.3s ease-out forwards;
-}
+    .anim-fig8 { animation: fig8 9s infinite linear; }
+    .anim-arc  { animation: arc  7s infinite var(--ease-soft); }
 
-/* MAIN CONTENT */
-main {
-  max-width: var(--max);
-  margin: auto;
-  padding: 32px 24px 80px;
-  min-height: calc(100vh - 70px);
-  animation: fadeIn 0.8s ease;
-}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-.welcome-header { margin-bottom: 30px; }
-.welcome-header h1 {
-  font-size: 2.5rem;
-  background: linear-gradient(135deg, #fff 40%, #8ec5ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.welcome-header p { color: var(--muted); margin-top: 8px; }
-
-/* DROPDOWN & CONTENT */
-.role-selector {
-  width: 100%;
-  padding: 16px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--glass-border);
-  color: #fff;
-  border-radius: 12px;
-  font-size: 16px;
-  margin-bottom: 24px;
-  outline: none;
-  cursor: pointer;
-}
-.role-selector option {
-  background: #0b0e14;
-  color: #fff;
-}
-
-.guide-content {
-  color: #e0e0e0;
-  line-height: 1.7;
-}
-.guide-content h2 { color: var(--accent); margin-top: 0; margin-bottom: 16px; }
-.guide-content h3 { color: #fff; margin-top: 24px; margin-bottom: 12px; font-size: 1.2rem; }
-.guide-content p { margin-bottom: 16px; }
-.guide-content ul { padding-left: 20px; margin-bottom: 16px; }
-.guide-content li { margin-bottom: 8px; }
-
-/* VISUALIZER ANIMATIONS */
-.cam-visualizer {
-  width: 100%;
-  height: 200px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.cam-subject {
-  width: 16px;
-  height: 16px;
-  background: var(--muted);
-  border-radius: 50%;
-  position: absolute;
-  z-index: 1;
-}
-.cam-reticle {
-  width: 80px;
-  height: 50px;
-  border: 2px solid var(--accent);
-  border-radius: 4px;
-  position: absolute;
-  box-shadow: 0 0 15px rgba(77,163,255,0.3);
-  z-index: 2;
-}
-.cam-reticle::before, .cam-reticle::after {
-  content: ''; position: absolute; width: 10px; height: 10px; border: 2px solid #fff;
-}
-.cam-reticle::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
-.cam-reticle::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
-
-/* REFINED FIGURE 8 ANIMATION */
-@keyframes fig8Smooth {
-  0%   { transform: translate(0, 0); }
-  6.25% { transform: translate(6px, -3px); }
-  12.5% { transform: translate(12px, -6px); }
-  18.75%{ transform: translate(18px, -3px); }
-  25%  { transform: translate(22px, 0); }
-  31.25%{ transform: translate(18px, 3px); }
-  37.5% { transform: translate(12px, 6px); }
-  43.75%{ transform: translate(6px, 3px); }
-  50%  { transform: translate(0, 0); }
-  56.25%{ transform: translate(-6px, -3px); }
-  62.5% { transform: translate(-12px, -6px); }
-  68.75%{ transform: translate(-18px, -3px); }
-  75%  { transform: translate(-22px, 0); }
-  81.25%{ transform: translate(-18px, 3px); }
-  87.5% { transform: translate(-12px, 6px); }
-  93.75%{ transform: translate(-6px, 3px); }
-  100% { transform: translate(0, 0); }
-}
-
-@keyframes arcMove {
-  0% { transform: translate(-30px, 5px) scale(1); }
-  50% { transform: translate(30px, -5px) scale(1.03); }
-  100% { transform: translate(-30px, 5px) scale(1); }
-}
-
-.anim-fig8 { animation: fig8Smooth 10s infinite linear; } 
-.anim-arc { animation: arcMove 8s infinite ease-in-out; }
-
-.anim-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-.anim-btn {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid var(--glass-border);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.anim-btn.active { background: var(--accent); color: #000; font-weight: bold; }
-
-/* Mobile Optimizations */
-@media (max-width: 768px) {
-  .header-inner { 
-    padding: 12px 16px; 
-    gap: 12px; 
-    flex-direction: column; 
-    height: auto; 
-    position: relative;
-  }
-  
-  .brand { 
-    display: flex; 
-    width: 100%;
-    justify-content: center; 
-    margin-bottom: 4px;
-    z-index: 1; 
-    padding: 0 60px; /* Prevent overlap from abs positioned elements */
-  }
-  
-  .nav-scroll-area { 
-    position: relative; 
-    left: auto;
-    transform: none;
-    width: 100%;
-    justify-content: center; 
-    margin: 0;
-  }
-  
-  .nav { padding: 4px; }
-  .nav button { padding: 8px 16px; }
-  
-  /* Positions matching Portal */
-  .menu-wrapper {
-    position: absolute;
-    top: 15px; 
-    right: 16px;
-    margin: 0;
-  }
-  
-  .search-wrapper { 
-    position: absolute;
-    top: 15px; 
-    left: 16px;
-    margin: 0;
-  }
-  
-  /* Fixed full-width search on mobile when active */
-  .search-input-container.expanded { 
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 70px;
-    z-index: 2200;
-    background: #0b0e14;
-    border-radius: 0;
-    border-bottom: 1px solid var(--accent);
-    padding: 0 20px;
-  }
-}
-</style>
+    .anim-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .anim-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-border);
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: var(--r-sm);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+    }
+    .anim-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+    .anim-btn.active {
+      background: var(--accent-dim);
+      border-color: rgba(79,168,255,0.4);
+      color: var(--accent);
+    }
+  </style>
 </head>
 <body>
 
+<!-- ── Chat Overlay ────────────────────────────────────────── -->
 <div id="chatOverlay">
   <div class="chat-header">
     <div class="chat-title">
-      <span style="color:var(--accent);">✦</span> Google Gemini
+      <span class="dot-accent">✦</span> AI Assistant
     </div>
     <div class="chat-controls">
-      <button class="control-btn" onclick="minimizeChat()">_</button>
-      <button class="control-btn" onclick="closeChat()">×</button>
+      <button class="ctrl-btn" id="closeChat" aria-label="Close">✕</button>
     </div>
   </div>
-  
+
   <div class="chat-body" id="chatBody">
-    <div class="message ai">
-      Hello! I'm your AV assistant powered by Google Gemini. How can I help with production today?
+    <div class="msg ai">
+      Hello! I'm your AV assistant. How can I help with production today?
     </div>
   </div>
-  
+
   <div class="chat-footer">
-    <div style="flex-grow:1; display:flex; flex-direction:column;">
-      <input type="text" class="chat-input" id="chatInput" placeholder="Message Gemini..." onkeydown="handleChatKey(event)">
-      <div id="cooldownMsg" class="cooldown-msg">Please wait 5s between messages.</div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Ask a question…" autocomplete="off">
+      <button class="send-btn" id="sendBtn" aria-label="Send">➤</button>
     </div>
-    <button class="send-btn" id="sendBtn" onclick="sendChatMessage()">➤</button>
+    <div class="cooldown-note" id="cooldownNote">Please wait 5s between messages.</div>
   </div>
 </div>
 
+<!-- ── Header ─────────────────────────────────────────────── -->
 <header>
   <div class="header-inner">
-    <div class="brand" onclick="window.location.href='index.html'">
-      <img src="cy.png" alt="CY" height="35">
-      <span>Portal</span>
-    </div>
-    
+    <a class="brand" href="index.html">
+      <img src="cy.png" alt="CY"> Portal
+    </a>
+
     <div class="nav-scroll-area">
       <nav class="nav" id="mainNav">
         <div id="navBg" class="nav-bg"></div>
-        <button id="notesBtn" onclick="handleNavClick('notes')">Notes</button>
-        <button id="guidesBtn" class="active" onclick="handleNavClick('guides')">Guides</button>
+        <button data-nav="notes">Notes</button>
+        <button data-nav="guides">Guides</button>
       </nav>
     </div>
 
     <div class="search-wrapper">
-      <div class="search-input-container" id="searchContainer" onclick="expandSearch()">
-        <div class="search-icon">🔍</div>
-        <input type="text" class="search-field" id="searchInput" placeholder="Ask AI..." onkeydown="handleSearchKey(event)">
+      <div class="search-capsule" id="searchCapsule">
+        <div class="search-icon-btn">🔍</div>
+        <input type="text" class="search-field" id="searchField" placeholder="Ask AI…" autocomplete="off">
       </div>
     </div>
 
     <div class="menu-wrapper">
-      <div class="hamburger" onclick="toggleMenu()">
-        <div></div>
-        <div></div>
-        <div></div>
+      <div class="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
       </div>
       <div id="menuDropdown" class="menu-dropdown">
         <a href="index.html">Home Website</a>
@@ -682,6 +475,7 @@ main {
   </div>
 </header>
 
+<!-- ── Main ───────────────────────────────────────────────── -->
 <main>
   <div class="welcome-header">
     <h1>Production Guides</h1>
@@ -689,334 +483,283 @@ main {
   </div>
 
   <div class="glass-panel">
-    <select class="role-selector" id="roleSelect" onchange="loadRoleContent()">
-      <option value="" disabled selected>Choose a guide...</option>
-      <option value="center_cam">Center Camera AKA Main</option>
-      <option value="handheld_cam">Handheld Camera Movement Examples</option>
+    <select class="role-selector" id="roleSelect">
+      <option value="" disabled selected>Choose a guide…</option>
+      <option value="center_cam">Center Camera — Main</option>
+      <option value="handheld_cam">Handheld Camera Movement</option>
     </select>
 
     <div id="guideDisplay" class="guide-content">
-      <p style="color:var(--muted); text-align:center; padding: 40px;">Select a role above to begin.</p>
+      <p style="color:var(--muted);text-align:center;padding:32px 0;">Select a guide above to begin.</p>
     </div>
   </div>
 </main>
 
+<script src="portal.js"></script>
 <script>
-window.onload = function() {
-  const navBg = document.getElementById('navBg');
-  navBg.style.transition = 'none';
-  updateNavBg(document.getElementById('guidesBtn'));
-  void navBg.offsetWidth;
-  requestAnimationFrame(() => {
-    navBg.style.transition = 'all 0.5s var(--spring)';
-  });
-};
-
-/* --- NAV LOGIC --- */
-const nav = document.getElementById('mainNav');
-const navBg = document.getElementById('navBg');
-let isDragging = false;
-let startX = 0;
-let initialTrans = 0;
-let didDrag = false;
-
-function updateNavBg(el) {
-  if(!el) return;
-  navBg.style.opacity = '1';
-  navBg.style.width = el.offsetWidth + 'px';
-  navBg.style.transform = `translateX(${el.offsetLeft}px)`;
-}
-
-function performNavAction(target) {
-  const btn = document.getElementById(target + 'Btn');
-  if(!btn) return;
-
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  updateNavBg(btn);
-  
-  if (target === 'notes') {
-    setTimeout(() => { window.location.href = 'portal.html'; }, 300);
-  }
-}
-
-function handleNavClick(target) {
-  if(didDrag) return;
-  performNavAction(target);
-}
-
-function startDrag(e) {
-  isDragging = true;
-  didDrag = false;
-  navBg.style.transition = 'none';
-  startX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
-  const style = window.getComputedStyle(navBg);
-  const matrix = new WebKitCSSMatrix(style.transform);
-  initialTrans = matrix.m41;
-}
-
-function drag(e) {
-  if(!isDragging) return;
-  const currentX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
-  const delta = currentX - startX;
-  if(Math.abs(delta) > 5) didDrag = true;
-  
-  let newTrans = initialTrans + delta;
-  const buttons = nav.querySelectorAll('button');
-  const firstBtn = buttons[0];
-  const lastBtn = buttons[buttons.length-1];
-  const maxTrans = (lastBtn.offsetLeft + lastBtn.offsetWidth) - navBg.offsetWidth;
-  
-  if(newTrans < firstBtn.offsetLeft) newTrans = firstBtn.offsetLeft;
-  if(newTrans > maxTrans) newTrans = maxTrans;
-  
-  navBg.style.transform = `translateX(${newTrans}px)`;
-}
-
-function endDrag(e) {
-  if(!isDragging) return;
-  isDragging = false;
-  navBg.style.transition = 'all 0.5s var(--spring)';
-  
-  if(didDrag) {
-    const currentTrans = new WebKitCSSMatrix(navBg.style.transform).m41;
-    const centerPill = currentTrans + (navBg.offsetWidth / 2);
-    let closestBtn = null;
-    let minDist = Infinity;
-    
-    nav.querySelectorAll('button').forEach(btn => {
-      const centerBtn = btn.offsetLeft + (btn.offsetWidth / 2);
-      const dist = Math.abs(centerBtn - centerPill);
-      if(dist < minDist) { minDist = dist; closestBtn = btn; }
-    });
-    
-    if(closestBtn) { 
-        performNavAction(closestBtn.id.replace('Btn','').toLowerCase()); 
-    }
-  } else {
-    updateNavBg(nav.querySelector('button.active'));
-  }
-}
-
-nav.addEventListener('mousedown', startDrag);
-nav.addEventListener('touchstart', startDrag, {passive: false});
-window.addEventListener('mousemove', drag);
-window.addEventListener('touchmove', drag, {passive: false});
-window.addEventListener('mouseup', endDrag);
-window.addEventListener('touchend', endDrag);
-
-/* --- AI / CHAT LOGIC --- */
-const API_KEYS = [
-  "AIzaSyDClTbooQVZiqntxARCYH8P0ijCrHKW-7U",
-  "AIzaSyAJD7tvvXw13CymrfOcwt8msPxzY1n_4lc"
-];
-
-let chatHistory = [];
-let lastMessageTime = 0;
-const COOLDOWN_MS = 5000;
-
-function expandSearch() {
-  const container = document.getElementById('searchContainer');
-  const input = document.getElementById('searchInput');
-  container.classList.add('expanded');
-  input.focus();
-}
-
-document.addEventListener('click', (e) => {
-  const container = document.getElementById('searchContainer');
-  if (!container.contains(e.target)) {
-    container.classList.remove('expanded');
-  }
-});
-
-function handleSearchKey(e) {
-  if (e.key === 'Enter') {
-    const query = e.target.value;
-    if(!query.trim()) return;
-    e.target.value = '';
-    document.getElementById('searchContainer').classList.remove('expanded');
-    const overlay = document.getElementById('chatOverlay');
-    overlay.classList.remove('minimized');
-    overlay.classList.add('active');
-    appendMessage('user', query);
-    processAIRequest(query);
-  }
-}
-
-function handleChatKey(e) { if (e.key === 'Enter') sendChatMessage(); }
-
-function sendChatMessage() {
-  const input = document.getElementById('chatInput');
-  const query = input.value;
-  if (!query.trim()) return;
-  const now = Date.now();
-  if (now - lastMessageTime < COOLDOWN_MS) {
-    const msg = document.getElementById('cooldownMsg');
-    msg.style.opacity = 1;
-    setTimeout(() => msg.style.opacity = 0, 2000);
-    return;
-  }
-  lastMessageTime = now;
-  input.value = '';
-  appendMessage('user', query);
-  processAIRequest(query);
-}
-
-function appendMessage(role, text) {
-  const body = document.getElementById('chatBody');
-  const div = document.createElement('div');
-  div.className = `message ${role}`;
-  if (role === 'user') {
-    div.innerText = text;
-    body.appendChild(div);
-  } else {
-    body.appendChild(div);
-    animateText(div, text);
-  }
-  body.scrollTop = body.scrollHeight;
-  chatHistory.push({ role: role === 'user' ? 'user' : 'model', parts: [{ text: text }] });
-}
-
-function animateText(element, text) {
-  const words = text.split(' '); 
-  words.forEach((word, i) => {
-    const span = document.createElement('span');
-    span.className = 'word-fade';
-    span.textContent = word + ' '; 
-    element.appendChild(span);
-    setTimeout(() => {
-      span.classList.add('visible');
-      document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
-    }, i * 30);
-  });
-}
-
-async function processAIRequest(query) {
-  const body = document.getElementById('chatBody');
-  const loader = document.createElement('div');
-  loader.className = 'message ai';
-  loader.id = 'tempLoader';
-  loader.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-  body.appendChild(loader);
-  body.scrollTop = body.scrollHeight;
-
-  const systemPrompt = `You are an AV assistant. 
-  Guides: center_cam, handheld_cam. 
-  Suggest [[OPEN_GUIDE:id]] to open a guide. No markdown.`;
-  
-  const contents = [
-    { role: "user", parts: [{ text: systemPrompt }] },
-    ...chatHistory
-  ];
-
-  let success = false;
-  for(const key of API_KEYS) {
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: contents })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const text = data.candidates[0].content.parts[0].text;
-            document.getElementById('tempLoader').remove();
-            
-            const guideMatch = text.match(/\[\[OPEN_GUIDE:(.*?)\]\]/);
-            if (guideMatch) {
-                const guideId = guideMatch[1];
-                const sysDiv = document.createElement('div');
-                sysDiv.className = 'chat-system-msg';
-                sysDiv.innerText = 'Opening Guide...';
-                body.appendChild(sysDiv);
-                setTimeout(() => {
-                    const s = document.getElementById('roleSelect');
-                    if(s) {
-                        s.value = guideId;
-                        loadRoleContent();
-                    }
-                }, 800);
-            }
-            appendMessage('ai', text.replace(/\[\[.*?\]\]/g, '').trim());
-            success = true;
-            break; 
-        }
-    } catch (e) {
-        console.warn("Key failed", e);
-    }
-  }
-
-  if(!success) {
-      document.getElementById('tempLoader').remove();
-      appendMessage('ai', "I'm having trouble connecting right now. Please try again.");
-  }
-}
-
-function closeChat() { document.getElementById('chatOverlay').classList.remove('active'); }
-function minimizeChat() { document.getElementById('chatOverlay').classList.toggle('minimized'); }
-
-/* --- GUIDES --- */
-const guides = {
+/* ── Guides Data ───────────────────────────────────────────── */
+const GUIDES = {
   center_cam: `
-    <h2>Center Camera (Main)</h2>
+    <h2>Center Camera — Main</h2>
     <p>The primary anchor for your production. Focus on smooth framing and consistent levels.</p>
     <h3>Setup</h3>
     <ul>
-      <li><strong>Tripod:</strong> Ensure the head is balanced for smooth tilts.</li>
-      <li><strong>Framing:</strong> Keep the speaker's eyes on the upper third line.</li>
+      <li><strong>Tripod:</strong> Ensure the head is balanced for smooth tilts and pans.</li>
+      <li><strong>Framing:</strong> Keep the speaker's eyes on the upper third of the frame.</li>
+      <li><strong>Exposure:</strong> Set a manual iris — avoid auto-iris drifting during live content.</li>
+    </ul>
+    <h3>Operating Tips</h3>
+    <ul>
+      <li>Make slow, deliberate moves. Avoid unnecessary reframing.</li>
+      <li>Hold wide during transitions; close up during key moments.</li>
+      <li>Communicate cue changes with your TD before executing.</li>
     </ul>
   `,
   handheld_cam: `
-    <h2>Handheld Camera Movement Examples</h2>
-    <p>Dynamic movement is essential. A subtle "Figure 8" or "Arc" helps maintain energy.</p>
-    
+    <h2>Handheld Camera Movement</h2>
+    <p>Dynamic movement adds energy. The two core patterns below keep footage intentional rather than shaky.</p>
+
     <div class="cam-visualizer">
       <div class="cam-subject"></div>
       <div id="reticle" class="cam-reticle anim-fig8"></div>
     </div>
-    
+
     <div class="anim-controls">
-      <button class="anim-btn active" onclick="setAnim('fig8', this)">Figure 8 (Crowd)</button>
-      <button class="anim-btn" onclick="setAnim('arc', this)">Arc (Keys/Solo)</button>
+      <button class="anim-btn active" data-anim="fig8">Figure 8 — Crowd</button>
+      <button class="anim-btn" data-anim="arc">Arc — Keys / Solo</button>
     </div>
 
-    <h3>Dynamic Handheld Movement Examples</h3>
-    <p style="font-size: 0.9em; color: var(--muted); margin-bottom: 15px;">
-      <em>Note: These visualizations are approximations. For the best examples of good camera movement, check out livestreams from <strong>Elevation Worship</strong>.</em>
-      <br>
-      Reference Song: <a href="https://www.youtube.com/watch?v=JjgkhHlTROQ" target="_blank" style="color: var(--accent);">Washed - Elevation Rhythm</a>
+    <p style="font-size:0.87em;color:var(--muted);margin-bottom:14px;">
+      <em>Visualizations are approximations. For strong real-world references, watch
+      <strong style="color:var(--text);">Elevation Worship</strong> livestreams.<br>
+      Reference: <a href="https://www.youtube.com/watch?v=JjgkhHlTROQ" target="_blank" rel="noopener">Washed — Elevation Rhythm ↗</a></em>
     </p>
+
+    <h3>Movement Patterns</h3>
     <ul>
-      <li><strong>Infinity Figure 8:</strong> Move in a continuous, rounded infinity loop. It creates a natural, breathing feel for crowd shots.</li>
-      <li><strong>The Arc:</strong> Move side-to-side in a circular path around your subject.</li>
+      <li><strong>Figure 8:</strong> Continuous, rounded infinity loop. Creates a natural breathing feel for crowd shots.</li>
+      <li><strong>Arc:</strong> Smooth side-to-side arc around your subject. Best for keys, soloists, or featured moments.</li>
+    </ul>
+    <h3>General Tips</h3>
+    <ul>
+      <li>Move from your hips — not your wrists. Let your whole body absorb inertia.</li>
+      <li>Anticipate the beat; start the motion just before, not on it.</li>
+      <li>Pull focus before moving into a tighter frame.</li>
     </ul>
   `
 };
 
-function setAnim(type, btn) {
-  const reticle = document.getElementById('reticle');
-  document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  reticle.className = type === 'fig8' ? 'cam-reticle anim-fig8' : 'cam-reticle anim-arc';
+/* ── Bootstrap ─────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Assign id's for initNav
+  document.querySelector('[data-nav="notes"]').id  = 'notesBtn';
+  document.querySelector('[data-nav="guides"]').id = 'guidesBtn';
+
+  initNav({
+    activeId: 'guidesBtn',
+    routes: {
+      notes: () => setTimeout(() => { window.location.href = 'portal.html'; }, 380)
+    }
+  });
+
+  initMenu();
+  initNavResize();
+  initSearch();
+  initChat();
+  initGuides();
+});
+
+/* ── Guide Selector ────────────────────────────────────────── */
+function initGuides() {
+  const select  = document.getElementById('roleSelect');
+  const display = document.getElementById('guideDisplay');
+
+  select.addEventListener('change', () => {
+    const content = GUIDES[select.value];
+    if (!content) return;
+    display.style.opacity = '0';
+    setTimeout(() => {
+      display.innerHTML = content;
+      display.style.transition = 'opacity 0.38s ease';
+      display.style.opacity = '1';
+      initAnimBtns();
+    }, 200);
+  });
 }
 
-function loadRoleContent() {
-  const val = document.getElementById('roleSelect').value;
-  const display = document.getElementById('guideDisplay');
-  if (guides[val]) {
-    display.innerHTML = guides[val];
-    display.style.opacity = 0;
-    setTimeout(() => { display.style.transition = 'opacity 0.5s'; display.style.opacity = 1; }, 50);
+function initAnimBtns() {
+  document.querySelectorAll('.anim-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const reticle = document.getElementById('reticle');
+      if (!reticle) return;
+      document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      reticle.className = btn.dataset.anim === 'fig8'
+        ? 'cam-reticle anim-fig8'
+        : 'cam-reticle anim-arc';
+    });
+  });
+}
+
+/* ── Search / Chat open ────────────────────────────────────── */
+function initSearch() {
+  const capsule = document.getElementById('searchCapsule');
+  const field   = document.getElementById('searchField');
+
+  capsule.addEventListener('click', () => {
+    if (!capsule.classList.contains('expanded')) {
+      capsule.classList.add('expanded');
+      setTimeout(() => field.focus(), 60);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!capsule.contains(e.target)) capsule.classList.remove('expanded');
+  });
+
+  field.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { capsule.classList.remove('expanded'); field.blur(); }
+    if (e.key === 'Enter') {
+      const q = field.value.trim();
+      if (!q) return;
+      field.value = '';
+      capsule.classList.remove('expanded');
+      openChat(q);
+    }
+  });
+}
+
+/* ── Chat ──────────────────────────────────────────────────── */
+const API_KEYS = [
+  'AIzaSyDClTbooQVZiqntxARCYH8P0ijCrHKW-7U',
+  'AIzaSyAJD7tvvXw13CymrfOcwt8msPxzY1n_4lc'
+];
+
+let chatHistory = [];
+let lastMsg     = 0;
+const COOLDOWN  = 5000;
+
+function initChat() {
+  document.getElementById('closeChat').addEventListener('click', closeChat);
+  document.getElementById('sendBtn').addEventListener('click', sendChat);
+  document.getElementById('chatInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChat();
+  });
+}
+
+function openChat(query) {
+  document.getElementById('chatOverlay').classList.add('active');
+  appendMsg('user', query);
+  callAI(query);
+}
+
+function closeChat() {
+  document.getElementById('chatOverlay').classList.remove('active');
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const query = input.value.trim();
+  if (!query) return;
+
+  const now = Date.now();
+  if (now - lastMsg < COOLDOWN) {
+    const note = document.getElementById('cooldownNote');
+    note.style.opacity = '1';
+    setTimeout(() => { note.style.opacity = '0'; }, 2200);
+    return;
+  }
+  lastMsg = now;
+  input.value = '';
+  appendMsg('user', query);
+  callAI(query);
+}
+
+function appendMsg(role, text) {
+  const body = document.getElementById('chatBody');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  if (role === 'user') {
+    div.textContent = text;
+  } else {
+    revealWords(div, text);
+  }
+
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  chatHistory.push({ role: role === 'user' ? 'user' : 'model', parts: [{ text }] });
+}
+
+function revealWords(el, text) {
+  text.split(' ').forEach((word, i) => {
+    const s = document.createElement('span');
+    s.className = 'word';
+    s.textContent = word + ' ';
+    el.appendChild(s);
+    setTimeout(() => {
+      s.classList.add('show');
+      document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
+    }, i * 28);
+  });
+}
+
+async function callAI(query) {
+  const body    = document.getElementById('chatBody');
+  const loader  = document.createElement('div');
+  loader.className = 'msg ai';
+  loader.id = 'loader';
+  loader.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  body.appendChild(loader);
+  body.scrollTop = body.scrollHeight;
+
+  const system = `You are an AV assistant for a production team. Available guides: center_cam, handheld_cam. To open a guide respond with [[OPEN_GUIDE:id]]. Keep responses concise and helpful. No markdown.`;
+  const contents = [
+    { role: 'user', parts: [{ text: system }] },
+    ...chatHistory
+  ];
+
+  let success = false;
+  for (const key of API_KEYS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }) }
+      );
+      if (!res.ok) continue;
+      const data  = await res.json();
+      const text  = data.candidates[0].content.parts[0].text;
+
+      document.getElementById('loader')?.remove();
+
+      // Guide open action
+      const match = text.match(/\[\[OPEN_GUIDE:(.*?)\]\]/);
+      if (match) {
+        const guideId = match[1].trim();
+        const sysMsg  = document.createElement('div');
+        sysMsg.className = 'chat-system';
+        sysMsg.textContent = 'Opening guide…';
+        body.appendChild(sysMsg);
+        setTimeout(() => {
+          const sel = document.getElementById('roleSelect');
+          if (sel && GUIDES[guideId]) {
+            sel.value = guideId;
+            sel.dispatchEvent(new Event('change'));
+          }
+        }, 700);
+      }
+
+      appendMsg('ai', text.replace(/\[\[.*?\]\]/g, '').trim());
+      success = true;
+      break;
+    } catch { /* try next key */ }
+  }
+
+  if (!success) {
+    document.getElementById('loader')?.remove();
+    appendMsg('ai', "I'm having trouble connecting right now. Please try again.");
   }
 }
-
-function toggleMenu(){
-  const dropdown = document.getElementById("menuDropdown");
-  dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
-  dropdown.classList.toggle("show");
-}
 </script>
-
 </body>
 </html>

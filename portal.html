@@ -1,513 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Volunteer Portal - CY Production</title>
-<link rel="icon" type="image/png" href="cy.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <title>Volunteer Portal — CY Production</title>
+  <link rel="icon" type="image/png" href="cy.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="portal.css">
 
-<style>
-:root{
-  --bg:#0b0e14;
-  --text:#ffffff;
-  --muted:#b0b6cc;
-  --accent:#4da3ff;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --gap:22px;
-  --max:1600px;
-  --soft:cubic-bezier(.25, .8, .25, 1);
-  --spring:cubic-bezier(.19,1,.22,1);
-  --danger: #ff5555;
-}
+  <style>
+    /* ── Sign-Out Button ─────────────────────────────────────── */
+    .signout-wrapper {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      margin-right: 8px;
+      z-index: 210;
+    }
 
-*{box-sizing:border-box;margin:0;padding:0;font-family:"Helvetica Neue", Helvetica, Arial, sans-serif}
+    .signout-btn {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      height: 36px;
+      width: 36px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 10px;
+      transition:
+        width   0.32s var(--ease-spring),
+        background 0.22s ease,
+        border-color 0.22s ease,
+        color 0.22s ease;
+      white-space: nowrap;
+    }
+    .signout-btn:hover { color: var(--text); background: rgba(255,255,255,0.09); }
+    .signout-btn.confirming {
+      width: 132px;
+      background: rgba(255, 90, 90, 0.13);
+      border-color: rgba(255, 90, 90, 0.5);
+      color: var(--danger);
+    }
+    .signout-btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      transition: transform 0.28s var(--ease-spring);
+    }
+    .signout-btn.confirming svg { transform: rotate(90deg); }
+    .signout-label {
+      overflow: hidden;
+      max-width: 0;
+      opacity: 0;
+      transition: max-width 0.3s var(--ease-spring), opacity 0.2s ease 0.1s;
+      padding-left: 0;
+    }
+    .signout-btn.confirming .signout-label {
+      max-width: 100px;
+      opacity: 1;
+      padding-left: 7px;
+    }
 
-html, body{
-  min-height:100%;
-  background-color:var(--bg);
-  background-image:
-    radial-gradient(circle at 50% 0%, #1a2236, transparent 60%),
-    radial-gradient(circle at 80% 20%, rgba(77, 163, 255, 0.08), transparent 40%);
-  color:var(--text);
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
+    /* ── Login Overlay ───────────────────────────────────────── */
+    #loginOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
 
-/* Glassmorphism */
-.glass-panel {
-  padding: 40px;
-  border-radius: 24px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  border-top: 1px solid var(--glass-highlight);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  margin-bottom: 40px;
-  overflow: hidden;
-}
+    .login-box {
+      width: 90%;
+      max-width: 300px;
+      text-align: center;
+      animation: page-in 0.5s var(--ease-spring) both;
+    }
+    .login-box img { width: 52px; margin-bottom: 18px; }
+    .login-box h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .login-box .sub {
+      color: var(--muted);
+      font-size: 13.5px;
+      margin-bottom: 28px;
+    }
 
-/* Header */
-header{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background: rgba(11, 14, 20, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-bottom:1px solid var(--glass-border);
-}
-.header-inner{
-  max-width:var(--max);
-  margin:auto;
-  padding:0 24px;
-  height: 70px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap: 20px;
-  position: relative;
-}
-.brand{
-  font-size:22px;
-  font-weight:700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  z-index: 102;
-}
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid var(--subtle);
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s var(--ease-snap);
+    }
+    .dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.15);
+      animation: pulse-ring 0.5s ease;
+    }
 
-/* Nav */
-.nav-scroll-area {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
-  z-index: 101;
-}
-.nav-scroll-area::-webkit-scrollbar { display: none; }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .key {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.12s ease, transform 0.1s ease;
+    }
+    .key:active {
+      background: rgba(255, 255, 255, 0.14);
+      transform: scale(0.93);
+    }
+    .key.empty { visibility: hidden; pointer-events: none; }
 
-.nav{
-  display:flex;
-  gap:6px;
-  padding: 5px;
-  background: rgba(255,255,255,0.02);
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  position: relative;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-}
-.nav button{
-  position: relative;
-  background:transparent;
-  border:none;
-  color:var(--muted);
-  padding:8px 24px;
-  border-radius:999px;
-  cursor:pointer;
-  font-weight:500;
-  font-size: 14px;
-  white-space: nowrap;
-  transition: color 0.3s ease;
-  z-index: 2;
-  outline: none;
-}
-.nav button:hover{
-  color: #fff;
-}
-.nav button.active{
-  color:#fff;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
+    .error-msg {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 16px;
+      height: 18px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
 
-/* Active Pill */
-.nav-bg {
-  position: absolute;
-  top: 5px;
-  left: 0;
-  height: calc(100% - 10px);
-  background: linear-gradient(135deg, var(--accent), #2b7bc6);
-  border-radius: 999px;
-  z-index: 1;
-  /* Transition set via JS to prevent load slide */
-  box-shadow: 0 4px 15px rgba(77, 163, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
-  opacity: 0;
-  pointer-events: none;
-}
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60%  { transform: translateX(-9px); }
+      40%, 80%  { transform: translateX(9px); }
+    }
+    .shake { animation: shake 0.38s ease-in-out; }
 
-/* Sign Out Button */
-.signout-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
-  margin-left: auto;
-  z-index: 400;
-.signout-container {
-  color: #fff; /* was effectively too dim to see */
-}
-.signout-icon svg * {
-  stroke: currentColor;
-}
+    .back-link {
+      display: inline-block;
+      margin-top: 28px;
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--muted);
+      padding: 9px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: background var(--transition-base), color var(--transition-base);
+    }
+    .back-link:hover { background: rgba(255,255,255,0.07); color: var(--text); }
 
-}
-.signout-container {
-  width: 40px; /* Collapsed width */
-  height: 40px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: width 0.3s var(--spring), background-color 0.3s, border-color 0.3s;
-  overflow: hidden;
-  cursor: pointer;
-  color: var(--muted);
-}
-.signout-container:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-}
-.signout-container.active {
-  width: 140px; /* Expanded width */
-  background: rgba(255, 85, 85, 0.15);
-  border-color: var(--danger);
-  color: var(--danger);
-  justify-content: flex-start;
-  padding-left: 10px;
-}
-.signout-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.signout-icon svg {
-  width: 20px;
-  height: 20px;
-  stroke: currentColor;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  fill: none;
-  transition: transform 0.3s ease;
-}
-/* Icon Rotation on Active */
-.signout-container.active .signout-icon svg {
-  transform: rotate(90deg);
-}
+    /* ── Doc Content ─────────────────────────────────────────── */
+    .doc-content {
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .doc-content * {
+      background-color: transparent !important;
+      color: inherit !important;
+      font-family: 'Outfit', sans-serif !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .doc-content b, .doc-content strong { font-weight: 700 !important; color: #fff !important; }
+    .doc-content h1, .doc-content h2, .doc-content h3,
+    .doc-content h4, .doc-content h5, .doc-content h6 {
+      color: #fff !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+      margin-top: 1.5em !important;
+      margin-bottom: 0.5em !important;
+    }
+    .doc-content a { color: var(--accent) !important; }
+    .doc-content ul, .doc-content ol { padding-left: 20px !important; margin: 10px 0 !important; }
+    .doc-content li { margin-bottom: 5px !important; }
+    .doc-content table {
+      border-collapse: collapse !important;
+      width: 100% !important;
+      margin: 16px 0 !important;
+    }
+    .doc-content td, .doc-content th {
+      border: 1px solid var(--glass-border) !important;
+      padding: 8px 12px !important;
+      vertical-align: top;
+    }
 
-.signout-text {
-  white-space: nowrap;
-  opacity: 0;
-  font-size: 13px;
-  font-weight: 600;
-  margin-left: 8px;
-  transform: translateX(10px);
-  transition: opacity 0.2s ease 0.1s, transform 0.2s ease 0.1s;
-  pointer-events: none;
-}
-.signout-container.active .signout-text {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Hamburger */
-.menu-wrapper { position: relative; z-index: 300; margin-left: 10px; }
-.hamburger{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  cursor:pointer;
-  padding: 10px;
-  margin-right: -10px;
-}
-.hamburger div{
-  width:24px;
-  height:2px;
-  background:var(--text);
-  border-radius:2px;
-  transition:.3s ease;
-}
-.menu-dropdown {
-  position: absolute;
-  top: calc(100% + 15px);
-  right: 0;
-  width: 200px;
-  background: rgba(15, 20, 30, 0.98);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 8px;
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: 0.3s ease;
-}
-.menu-dropdown.show { display: flex; opacity: 1; transform: translateY(0); }
-.menu-dropdown a {
-  text-decoration: none;
-  color: var(--muted);
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  transition: 0.2s;
-}
-.menu-dropdown a:active, .menu-dropdown a:hover { background: rgba(255,255,255,0.08); color: #fff; }
-
-/* LOGIN SCREEN */
-#loginOverlay {
-  position: fixed;
-  inset: 0;
-  background: #0b0e14;
-  z-index: 9999;
-  display: none; 
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-.login-box {
-  width: 90%;
-  max-width: 320px;
-  text-align: center;
-}
-.passcode-display {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 30px;
-}
-.dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid var(--muted);
-  transition: 0.2s;
-}
-.dot.filled {
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-}
-.keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-.key {
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--glass-border);
-  font-size: 24px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.1s;
-  user-select: none;
-}
-.key:active { background: rgba(255,255,255,0.2); transform: scale(0.95); }
-.error-msg {
-  color: #ff7a7a;
-  margin-top: 20px;
-  height: 20px;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.shake { animation: shake 0.4s ease-in-out; }
-@keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
-
-.back-btn {
-  margin-top: 30px;
-  background: transparent;
-  border: 1px solid var(--glass-border);
-  color: var(--muted);
-  padding: 10px 20px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
-}
-.back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
-/* MAIN CONTENT */
-main {
-  max-width: var(--max);
-  margin: auto;
-  padding: 32px 24px 80px;
-  min-height: calc(100vh - 70px);
-  animation: fadeIn 0.8s ease;
-}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-.welcome-header {
-  margin-bottom: 30px;
-}
-.welcome-header h1 {
-  font-size: 2.5rem;
-  background: linear-gradient(135deg, #fff 40%, #8ec5ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.welcome-header p { color: var(--muted); margin-top: 8px; }
-
-/* DOC CONTENT STYLING - AGGRESSIVE OVERRIDES */
-#docContainer {
-  min-height: 200px;
-}
-.doc-content {
-  color: #ffffff;
-  line-height: 1.6;
-  font-size: 1rem;
-  overflow-wrap: break-word; /* Keep text within the box */
-  word-wrap: break-word;
-}
-
-/* Force transparent background and white text on ALL imported elements */
-.doc-content * {
-  background-color: transparent !important;
-  color: inherit !important; /* Inherit white from .doc-content unless specific */
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
-  max-width: 100% !important;
-  height: auto !important;
-  box-sizing: border-box !important;
-}
-
-/* Explicitly target bold elements to ensure they are visible and bold */
-.doc-content b, 
-.doc-content strong {
-  font-weight: 700 !important;
-  color: #ffffff !important; 
-}
-
-/* Headings */
-.doc-content h1, 
-.doc-content h2, 
-.doc-content h3, 
-.doc-content h4, 
-.doc-content h5, 
-.doc-content h6 {
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  margin-top: 1.5em !important;
-  margin-bottom: 0.5em !important;
-  padding: 0 !important;
-}
-
-/* Links */
-.doc-content a {
-  color: var(--accent) !important;
-  text-decoration: underline;
-}
-
-/* Lists */
-.doc-content ul, .doc-content ol {
-  padding-left: 20px !important;
-  margin: 10px 0 !important;
-}
-.doc-content li {
-  margin-bottom: 5px !important;
-}
-
-/* Tables */
-.doc-content table {
-  border-collapse: collapse !important;
-  width: 100% !important;
-  margin: 16px 0 !important;
-}
-.doc-content td, .doc-content th {
-  border: 1px solid var(--glass-border) !important;
-  padding: 8px !important;
-  vertical-align: top;
-}
-
-/* Remove Google Doc Wrapper Padding/Margins */
-.doc-content > div {
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Mobile Layout Optimization */
-@media (max-width: 768px) {
-  .header-inner { 
-    padding: 12px 16px; 
-    gap: 12px; 
-    flex-direction: column; 
-    height: auto; 
-    position: relative;
-  }
-  .brand { 
-    display: flex; /* Force display on mobile */
-    width: 100%;
-    justify-content: center; 
-    margin-bottom: 4px;
-    z-index: 1; 
-    padding: 0 60px; /* Prevent button overlap */
-  }
-  
-  /* Nav Bar Centered below brand */
-  .nav-scroll-area { 
-    position: relative; 
-    left: auto;
-    transform: none;
-    width: 100%;
-    justify-content: center; 
-    margin: 0;
-  }
-  .nav { padding: 4px; }
-  .nav button { padding: 8px 16px; }
-  
-  /* Hamburger Top Right */
-  .menu-wrapper {
-    position: absolute;
-    top: 15px; /* Aligned with brand text vertically */
-    right: 16px;
-    margin: 0;
-  }
-  .menu-dropdown { 
-    right: 0; 
-    width: 180px; 
-  }
-
-  /* Sign Out Top Left */
-  .signout-wrapper { 
-    position: absolute;
-    top: 15px; /* Aligned with brand text vertically */
-    left: 16px;
-    margin: 0;
-  }
-}
-</style>
+    /* ── Mobile additions ────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .signout-wrapper {
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        margin: 0;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
+<!-- ── Login Overlay ──────────────────────────────────────── -->
 <div id="loginOverlay">
-  <div class="login-box">
-    <div style="margin-bottom: 30px;">
-      <img src="cy.png" width="60" style="margin-bottom: 16px;">
-      <h2>Portal Access</h2>
-      <p style="color: var(--muted); font-size: 14px;">Enter Team Passcode</p>
-    </div>
-    
-    <div class="passcode-display" id="dots">
+  <div class="login-box" id="loginBox">
+    <img src="cy.png" alt="CY">
+    <h2>Portal Access</h2>
+    <p class="sub">Enter team passcode</p>
+
+    <div class="dots" id="dots">
       <div class="dot"></div>
       <div class="dot"></div>
       <div class="dot"></div>
@@ -515,61 +248,54 @@ main {
     </div>
 
     <div class="keypad">
-      <div class="key" onclick="press(1)">1</div>
-      <div class="key" onclick="press(2)">2</div>
-      <div class="key" onclick="press(3)">3</div>
-      <div class="key" onclick="press(4)">4</div>
-      <div class="key" onclick="press(5)">5</div>
-      <div class="key" onclick="press(6)">6</div>
-      <div class="key" onclick="press(7)">7</div>
-      <div class="key" onclick="press(8)">8</div>
-      <div class="key" onclick="press(9)">9</div>
-      <div class="key" style="opacity:0; pointer-events:none;"></div>
-      <div class="key" onclick="press(0)">0</div>
-      <div class="key" onclick="backspace()">⌫</div>
+      <div class="key" data-k="1">1</div>
+      <div class="key" data-k="2">2</div>
+      <div class="key" data-k="3">3</div>
+      <div class="key" data-k="4">4</div>
+      <div class="key" data-k="5">5</div>
+      <div class="key" data-k="6">6</div>
+      <div class="key" data-k="7">7</div>
+      <div class="key" data-k="8">8</div>
+      <div class="key" data-k="9">9</div>
+      <div class="key empty"></div>
+      <div class="key" data-k="0">0</div>
+      <div class="key" data-k="back">⌫</div>
     </div>
-    
-    <div id="errorMsg" class="error-msg">Incorrect Passcode</div>
-    
-    <button class="back-btn" onclick="window.location.href='index.html'">Back to Home</button>
+
+    <p id="errorMsg" class="error-msg">Incorrect passcode</p>
+    <button class="back-link" onclick="window.location.href='index.html'">← Back to Home</button>
   </div>
 </div>
 
-<!-- APP UI -->
+<!-- ── Header ─────────────────────────────────────────────── -->
 <header>
   <div class="header-inner">
-    <div class="brand" onclick="window.location.href='index.html'">
-      <img src="cy.png" alt="CY" height="35">
-      <span>Portal</span>
-    </div>
-    
+    <a class="brand" href="index.html">
+      <img src="cy.png" alt="CY"> Portal
+    </a>
+
     <div class="nav-scroll-area">
       <nav class="nav" id="mainNav">
         <div id="navBg" class="nav-bg"></div>
-        <button id="notesBtn" class="active" onclick="handleNavClick('notes')">Notes</button>
-        <button id="guidesBtn" onclick="handleNavClick('guides')">Guides</button>
+        <button data-nav="notes">Notes</button>
+        <button data-nav="guides">Guides</button>
       </nav>
     </div>
 
     <div class="signout-wrapper">
-      <div class="signout-container" id="signOutContainer" onclick="toggleSignOut()">
-        <div class="signout-icon">
-          <!-- Exit Arrow Icon -->
-          <svg viewBox="0 0 24 24">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-        </div>
-        <span class="signout-text">Are you sure?</span>
-      </div>
+      <button class="signout-btn" id="signOutBtn" aria-label="Sign out">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span class="signout-label">Are you sure?</span>
+      </button>
     </div>
 
     <div class="menu-wrapper">
-      <div class="hamburger" onclick="toggleMenu()">
-        <div></div>
-        <div></div>
-        <div></div>
+      <div class="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
       </div>
       <div id="menuDropdown" class="menu-dropdown">
         <a href="index.html">Home Website</a>
@@ -578,6 +304,7 @@ main {
   </div>
 </header>
 
+<!-- ── Main ───────────────────────────────────────────────── -->
 <main id="mainContent">
   <div class="welcome-header">
     <h1 id="welcomeText">Welcome,</h1>
@@ -585,346 +312,180 @@ main {
   </div>
 
   <div class="glass-panel" id="docContainer">
-    <div style="text-align:center; padding: 40px; color: var(--muted);">
-      <div class="spinner" style="
-        width: 30px; 
-        height: 30px; 
-        border: 3px solid rgba(255,255,255,0.1); 
-        border-top-color: var(--accent); 
-        border-radius: 50%; 
-        animation: spin 1s linear infinite; 
-        margin: 0 auto 16px;">
-      </div>
-      Loading Notes...
+    <div class="load-state">
+      <div class="spinner"></div>
+      Loading notes…
     </div>
   </div>
 </main>
 
-<style>
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
-
+<script src="portal.js"></script>
 <script>
-window.onload = function() {
-  // Disable animation initially to prevent sliding on load
-  const navBg = document.getElementById('navBg');
-  navBg.style.transition = 'none';
-  
-  updateNavBg(document.getElementById('notesBtn'));
-  
-  // Force Reflow
-  void navBg.offsetWidth;
-  
-  // Re-enable animation after setup
-  requestAnimationFrame(() => {
-    navBg.style.transition = 'all 0.5s var(--spring)';
-  });
-  
-  // Check for cached auth
-  const cachedRole = localStorage.getItem('cy_portal_role');
-  if (cachedRole === 'Volunteer' || cachedRole === 'Director') {
-    // Already authenticated, load content immediately without showing overlay
-    loadContent(cachedRole);
-  } else {
-    // Not authenticated, show login overlay
-    document.getElementById('loginOverlay').style.display = 'flex';
-  }
-  
-  // Keyboard Support for PIN
-  document.addEventListener('keydown', (e) => {
-    // Only listen if overlay is visible
-    const overlay = document.getElementById('loginOverlay');
-    if (overlay.style.display === 'none' || overlay.style.opacity === '0') return;
-
-    if (e.key >= '0' && e.key <= '9') {
-      press(parseInt(e.key));
-    } else if (e.key === 'Backspace') {
-      backspace();
-    } else if (e.key === 'Escape') {
-      window.location.href = 'index.html';
+/* ── Bootstrap ─────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  initNav({
+    activeId: 'notesBtn',   // set dynamically below
+    routes: {
+      guides: () => setTimeout(() => { window.location.href = 'guides.html'; }, 380)
     }
   });
-};
 
-/* SIGN OUT LOGIC */
-let signOutActive = false;
+  // Fix: button id's come from data-nav now — update initNav to not rely on id
+  // We'll set active class manually here
+  const notesBtn = document.querySelector('[data-nav="notes"]');
+  if (notesBtn) notesBtn.id = 'notesBtn';
+  const guidesBtn = document.querySelector('[data-nav="guides"]');
+  if (guidesBtn) guidesBtn.id = 'guidesBtn';
 
-function toggleSignOut() {
-  const container = document.getElementById('signOutContainer');
-  const iconSvg = container.querySelector('.signout-icon svg');
-  
-  if (!signOutActive) {
-    // Stage 1: Confirm
-    signOutActive = true;
-    container.classList.add('active');
-    // Change to X icon
-    iconSvg.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
-  } else {
-    // Stage 2: Action (Log out)
-    localStorage.removeItem('cy_portal_role');
-    window.location.reload();
-  }
-}
-
-// Close sign out if clicking outside
-document.addEventListener('click', (e) => {
-  const container = document.getElementById('signOutContainer');
-  if (signOutActive && !container.contains(e.target)) {
-    signOutActive = false;
-    container.classList.remove('active');
-    // Revert to Exit arrow
-    container.querySelector('.signout-icon svg').innerHTML = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>';
-  }
+  initMenu();
+  initNavResize();
+  initSignOut();
+  initLogin();
 });
 
-/* LOGIN LOGIC */
-let input = "";
-const PASS_GENERAL = "0316";
-const PASS_DIRECTOR = "6464";
+/* ── Sign Out ──────────────────────────────────────────────── */
+function initSignOut() {
+  const btn = document.getElementById('signOutBtn');
+  if (!btn) return;
+  let confirming = false;
+  const svgEl = btn.querySelector('svg');
+  const xIcon = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+  const exitIcon = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>';
 
-function press(num) {
-  if(input.length < 4) {
-    input += num.toString();
-    updateDots();
-    if(input.length === 4) checkPass();
-  }
-}
+  btn.addEventListener('click', () => {
+    if (!confirming) {
+      confirming = true;
+      btn.classList.add('confirming');
+      svgEl.innerHTML = xIcon;
+    } else {
+      localStorage.removeItem('cy_portal_role');
+      window.location.reload();
+    }
+  });
 
-function backspace() {
-  input = input.slice(0, -1);
-  updateDots();
-  document.getElementById('errorMsg').style.opacity = '0';
-}
-
-function updateDots() {
-  const dots = document.querySelectorAll('.dot');
-  dots.forEach((dot, i) => {
-    if(i < input.length) dot.classList.add('filled');
-    else dot.classList.remove('filled');
+  document.addEventListener('click', (e) => {
+    if (confirming && !btn.contains(e.target)) {
+      confirming = false;
+      btn.classList.remove('confirming');
+      svgEl.innerHTML = exitIcon;
+    }
   });
 }
 
-function checkPass() {
-  const error = document.getElementById('errorMsg');
-  
-  if (input === PASS_GENERAL) {
-    localStorage.setItem('cy_portal_role', 'Volunteer');
-    unlock('Volunteer');
-  } else if (input === PASS_DIRECTOR) {
-    localStorage.setItem('cy_portal_role', 'Director');
-    unlock('Director');
+/* ── Login ─────────────────────────────────────────────────── */
+function initLogin() {
+  const overlay  = document.getElementById('loginOverlay');
+  const loginBox = document.getElementById('loginBox');
+  const dotsEl   = document.getElementById('dots');
+  const errorEl  = document.getElementById('errorMsg');
+
+  const PASS_VOL = '0316';
+  const PASS_DIR = '6464';
+  let input = '';
+
+  // Check cached auth
+  const cached = localStorage.getItem('cy_portal_role');
+  if (cached === 'Volunteer' || cached === 'Director') {
+    loadContent(cached);
   } else {
-    error.style.opacity = '1';
-    document.querySelector('.login-box').classList.add('shake');
-    setTimeout(() => {
-      document.querySelector('.login-box').classList.remove('shake');
-      input = "";
-      updateDots();
-    }, 400);
+    overlay.style.display = 'flex';
   }
-}
 
-function unlock(role) {
-  const overlay = document.getElementById('loginOverlay');
-  overlay.style.transition = 'opacity 0.5s ease';
-  overlay.style.opacity = '0';
-  setTimeout(() => overlay.style.display = 'none', 500);
-  
-  loadContent(role);
-}
+  // Keypad clicks
+  document.querySelectorAll('.key[data-k]').forEach(key => {
+    key.addEventListener('click', () => {
+      const k = key.dataset.k;
+      if (k === 'back') { erase(); return; }
+      if (input.length < 4) { input += k; render(); if (input.length === 4) check(); }
+    });
+  });
 
-function loadContent(role) {
-  if (role === 'Director') {
-    document.getElementById('welcomeText').textContent = "Welcome Director,";
-    loadDoc("https://docs.google.com/document/d/e/2PACX-1vRokjRzfFexinsjGaD4-iCpVLRRRpFR3nWpEcVx7TTqJD8JzdtVCIcB5TdXvHclOHbkeleGIQhmsQAt/pub");
-  } else {
-    document.getElementById('welcomeText').textContent = "Welcome,";
-    loadDoc("https://docs.google.com/document/d/e/2PACX-1vTNLwNN_Y0QvD4_tBw_1Yw7aH7vuQ1qlpur86QJ3rnlYKxF_bM21pt3TQ3M6PdEN0O9oKy5ATFEyUu3/pub");
+  // Physical keyboard
+  document.addEventListener('keydown', (e) => {
+    if (overlay.style.display === 'none') return;
+    if (e.key >= '0' && e.key <= '9' && input.length < 4) {
+      input += e.key; render(); if (input.length === 4) check();
+    } else if (e.key === 'Backspace') { erase(); }
+    else if (e.key === 'Escape') { window.location.href = 'index.html'; }
+  });
+
+  function erase() {
+    input = input.slice(0, -1);
+    render();
+    errorEl.style.opacity = '0';
   }
-}
 
-/* FETCH DOC LOGIC */
-async function loadDoc(url) {
-  const container = document.getElementById('docContainer');
-  // List of proxies to try in order
-  const proxies = [
-    "https://corsproxy.io/?",
-    "https://api.allorigins.win/raw?url=",
-    "https://api.codetabs.com/v1/proxy?quest="
-  ];
-  
-  let html = null;
-  let success = false;
+  function render() {
+    dotsEl.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('filled', i < input.length);
+    });
+  }
 
-  for (const proxy of proxies) {
-    try {
-      const response = await fetch(proxy + encodeURIComponent(url));
-      if (response.ok) {
-        html = await response.text();
-        success = true;
-        break; // Stop loop on success
-      }
-    } catch (e) {
-      console.warn(`Proxy ${proxy} failed, trying next...`);
+  function check() {
+    if (input === PASS_VOL) { unlock('Volunteer'); }
+    else if (input === PASS_DIR) { unlock('Director'); }
+    else {
+      errorEl.style.opacity = '1';
+      loginBox.classList.add('shake');
+      setTimeout(() => {
+        loginBox.classList.remove('shake');
+        input = ''; render();
+      }, 400);
     }
   }
 
-  if (!success || !html) {
-    container.innerHTML = `<p style="color:#ff7a7a; text-align:center;">Failed to load notes. Please reload or check connection.</p>`;
+  function unlock(role) {
+    localStorage.setItem('cy_portal_role', role);
+    overlay.style.transition = 'opacity 0.45s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 450);
+    loadContent(role);
+  }
+}
+
+/* ── Content ───────────────────────────────────────────────── */
+function loadContent(role) {
+  const welcomeEl = document.getElementById('welcomeText');
+  if (role === 'Director') {
+    welcomeEl.textContent = 'Welcome, Director';
+    fetchDoc('https://docs.google.com/document/d/e/2PACX-1vRokjRzfFexinsjGaD4-iCpVLRRRpFR3nWpEcVx7TTqJD8JzdtVCIcB5TdXvHclOHbkeleGIQhmsQAt/pub');
+  } else {
+    welcomeEl.textContent = 'Welcome,';
+    fetchDoc('https://docs.google.com/document/d/e/2PACX-1vTNLwNN_Y0QvD4_tBw_1Yw7aH7vuQ1qlpur86QJ3rnlYKxF_bM21pt3TQ3M6PdEN0O9oKy5ATFEyUu3/pub');
+  }
+}
+
+async function fetchDoc(url) {
+  const container = document.getElementById('docContainer');
+  const PROXIES = [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+    'https://api.codetabs.com/v1/proxy?quest='
+  ];
+
+  let html = null;
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy + encodeURIComponent(url));
+      if (res.ok) { html = await res.text(); break; }
+    } catch { /* try next */ }
+  }
+
+  if (!html) {
+    container.innerHTML = '<p style="color:var(--danger);text-align:center;padding:40px;">Failed to load notes. Please reload or check connection.</p>';
     return;
   }
-    
+
   try {
-    // Parse the HTML to extract only the body content
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    
-    // Google docs often put content in #contents or body
+    const parser  = new DOMParser();
+    const doc     = parser.parseFromString(html, 'text/html');
     const content = doc.querySelector('#contents') || doc.body;
-    
-    // Basic sanitation/styling removal could happen here if needed
-    // For now we just dump it in a wrapper
     container.innerHTML = `<div class="doc-content">${content.innerHTML}</div>`;
-  } catch (parseError) {
-    container.innerHTML = `<p style="color:#ff7a7a; text-align:center;">Error parsing notes content.</p>`;
-    console.error(parseError);
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--danger);text-align:center;padding:40px;">Error parsing notes.</p>';
+    console.error(err);
   }
 }
-
-/* UI LOGIC */
-function toggleMenu(){
-  const dropdown = document.getElementById("menuDropdown");
-  const isShow = dropdown.classList.contains("show");
-  
-  if(isShow) {
-    dropdown.classList.remove("show");
-    setTimeout(() => { if(!dropdown.classList.contains("show")) dropdown.style.display = "none"; }, 200); 
-  } else {
-    dropdown.style.display = "flex";
-    // Force reflow
-    void dropdown.offsetWidth;
-    dropdown.classList.add("show");
-  }
-}
-
-document.addEventListener('click', function(event) {
-  const menuWrapper = document.querySelector('.menu-wrapper');
-  const dropdown = document.getElementById("menuDropdown");
-  if (!menuWrapper.contains(event.target) && dropdown.classList.contains('show')) {
-    toggleMenu();
-  }
-});
-
-/* Draggable Nav Logic & Page Transition */
-const nav = document.getElementById('mainNav');
-const navBg = document.getElementById('navBg');
-let isDragging = false;
-let startX = 0;
-let initialTrans = 0;
-let didDrag = false;
-
-function updateNavBg(el) {
-  if(!el) return;
-  navBg.style.opacity = '1';
-  navBg.style.width = el.offsetWidth + 'px';
-  navBg.style.transform = `translateX(${el.offsetLeft}px)`;
-}
-
-// Logic to actually perform action, separate from event handler logic
-function performNavAction(target) {
-  const btn = document.getElementById(target + 'Btn');
-  if(!btn) return;
-
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  updateNavBg(btn);
-  
-  // Transition logic
-  if (target === 'guides') {
-    // Wait for the slide animation (500ms) before navigating
-    setTimeout(() => {
-      window.location.href = 'guides.html';
-    }, 500);
-  }
-}
-
-function handleNavClick(target) {
-  // If user dragged recently, ignore click
-  if(didDrag) return;
-  performNavAction(target);
-}
-
-// Drag Logic (Standard)
-function startDrag(e) {
-  isDragging = true;
-  didDrag = false;
-  navBg.style.transition = 'none';
-  startX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
-  const style = window.getComputedStyle(navBg);
-  const matrix = new WebKitCSSMatrix(style.transform);
-  initialTrans = matrix.m41;
-}
-
-function drag(e) {
-  if(!isDragging) return;
-  const currentX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
-  const delta = currentX - startX;
-  if(Math.abs(delta) > 5) didDrag = true;
-  
-  let newTrans = initialTrans + delta;
-  const buttons = nav.querySelectorAll('button');
-  const firstBtn = buttons[0];
-  const lastBtn = buttons[buttons.length-1];
-  const maxTrans = (lastBtn.offsetLeft + lastBtn.offsetWidth) - navBg.offsetWidth;
-  
-  if(newTrans < firstBtn.offsetLeft) newTrans = firstBtn.offsetLeft;
-  if(newTrans > maxTrans) newTrans = maxTrans;
-  
-  navBg.style.transform = `translateX(${newTrans}px)`;
-  document.body.style.cursor = 'grabbing';
-  navBg.style.cursor = 'grabbing';
-}
-
-function endDrag(e) {
-  if(!isDragging) return;
-  isDragging = false;
-  document.body.style.cursor = '';
-  navBg.style.cursor = 'grab';
-  navBg.style.transition = 'all 0.5s var(--spring)';
-  
-  if(didDrag) {
-    const currentTrans = new WebKitCSSMatrix(navBg.style.transform).m41;
-    const centerPill = currentTrans + (navBg.offsetWidth / 2);
-    let closestBtn = null;
-    let minDist = Infinity;
-    
-    nav.querySelectorAll('button').forEach(btn => {
-      const centerBtn = btn.offsetLeft + (btn.offsetWidth / 2);
-      const dist = Math.abs(centerBtn - centerPill);
-      if(dist < minDist) { minDist = dist; closestBtn = btn; }
-    });
-    
-    if(closestBtn) { 
-        // Force action because this comes from a drag release
-        performNavAction(closestBtn.id.replace('Btn','').toLowerCase()); 
-    }
-    
-    // Reset didDrag after short delay to prevent the subsequent click event from firing
-    setTimeout(() => { didDrag = false; }, 50);
-  } else {
-    // Snap back to active if it wasn't a drag (e.g. slight jitter)
-    updateNavBg(nav.querySelector('button.active'));
-  }
-}
-
-nav.addEventListener('mousedown', startDrag);
-nav.addEventListener('touchstart', startDrag, {passive: false});
-window.addEventListener('mousemove', drag);
-window.addEventListener('touchmove', drag, {passive: false});
-window.addEventListener('mouseup', endDrag);
-window.addEventListener('touchend', endDrag);
-
 </script>
-
 </body>
 </html>
