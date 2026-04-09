@@ -8,262 +8,6 @@
   <link rel="stylesheet" href="portal.css">
 
   <style>
-    /* ── Search Bar ──────────────────────────────────────────── */
-    .search-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      margin-left: auto;
-      margin-right: 8px;
-      z-index: 210;
-    }
-
-    .search-capsule {
-      display: flex;
-      align-items: center;
-      width: 36px;
-      height: 36px;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--glass-border);
-      border-radius: 999px;
-      cursor: pointer;
-      transition: width 0.36s var(--ease-spring), border-color 0.22s ease, background 0.22s ease;
-    }
-    .search-capsule.expanded {
-      width: 220px;
-      border-color: rgba(79, 168, 255, 0.5);
-      background: rgba(0, 0, 0, 0.45);
-      cursor: text;
-    }
-    .search-icon-btn {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      font-size: 15px;
-      transition: color 0.2s ease;
-    }
-    .search-capsule.expanded .search-icon-btn { color: var(--accent); }
-    .search-field {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      font-size: 14px;
-      outline: none;
-      padding-right: 14px;
-      opacity: 0;
-      transition: opacity 0.18s ease;
-    }
-    .search-capsule.expanded .search-field { opacity: 1; }
-
-    /* Full-width search on mobile */
-    @media (max-width: 768px) {
-      .search-wrapper {
-        position: absolute;
-        top: 14px;
-        left: 16px;
-        margin: 0;
-      }
-      .search-capsule.expanded {
-        position: fixed;
-        inset: 0 0 auto 0;
-        width: 100%;
-        height: 58px;
-        border-radius: 0;
-        border: none;
-        border-bottom: 1px solid rgba(79, 168, 255, 0.4);
-        background: rgba(8, 11, 17, 0.97);
-        z-index: 9000;
-        padding: 0 8px;
-      }
-    }
-
-    /* ── Chat Overlay ────────────────────────────────────────── */
-    #chatOverlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9000;
-      background: rgba(8, 11, 17, 0.93);
-      backdrop-filter: blur(24px);
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transform: scale(0.97) translateY(8px);
-      transition: opacity 0.32s var(--ease-soft), transform 0.32s var(--ease-spring);
-    }
-    #chatOverlay.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: scale(1) translateY(0);
-    }
-
-    .chat-header {
-      padding: 16px 22px;
-      border-bottom: 1px solid var(--glass-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.02);
-      flex-shrink: 0;
-    }
-    .chat-title {
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: -0.01em;
-    }
-    .chat-title .dot-accent { color: var(--accent); font-size: 18px; }
-
-    .chat-controls { display: flex; gap: 8px; }
-    .ctrl-btn {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 1px solid var(--glass-border);
-      background: rgba(255,255,255,0.06);
-      color: var(--muted);
-      font-size: 15px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background var(--transition-base), color var(--transition-base);
-      line-height: 1;
-    }
-    .ctrl-btn:hover { background: rgba(255,255,255,0.14); color: var(--text); }
-
-    .chat-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      scroll-behavior: smooth;
-    }
-    .chat-body::-webkit-scrollbar { width: 4px; }
-    .chat-body::-webkit-scrollbar-track { background: transparent; }
-    .chat-body::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 4px; }
-
-    @keyframes msg-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .msg {
-      max-width: 78%;
-      padding: 11px 15px;
-      border-radius: 16px;
-      font-size: 14.5px;
-      line-height: 1.55;
-      word-wrap: break-word;
-      animation: msg-in 0.25s var(--ease-soft) both;
-    }
-    .msg.user {
-      align-self: flex-end;
-      background: var(--accent);
-      color: #000;
-      font-weight: 500;
-      border-bottom-right-radius: 4px;
-    }
-    .msg.ai {
-      align-self: flex-start;
-      background: rgba(255, 255, 255, 0.07);
-      color: #dde3f0;
-      border: 1px solid var(--glass-border);
-      border-bottom-left-radius: 4px;
-      min-width: 44px;
-    }
-    .chat-system {
-      align-self: center;
-      font-size: 12.5px;
-      color: var(--muted);
-      font-style: italic;
-      animation: msg-in 0.25s var(--ease-soft) both;
-    }
-
-    /* Word-by-word reveal */
-    .word {
-      display: inline;
-      white-space: pre-wrap;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-    }
-    .word.show { opacity: 1; }
-
-    /* Typing dots */
-    .typing {
-      display: inline-flex;
-      gap: 4px;
-      padding: 2px;
-    }
-    .typing span {
-      width: 6px; height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: bounce-dot 1.3s infinite ease-in-out both;
-    }
-    .typing span:nth-child(1) { animation-delay: -0.3s; }
-    .typing span:nth-child(2) { animation-delay: -0.15s; }
-    .typing span:nth-child(3) { animation-delay: 0s; }
-
-    .chat-footer {
-      padding: 14px 20px;
-      border-top: 1px solid var(--glass-border);
-      background: rgba(0, 0, 0, 0.18);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    .chat-input-row { display: flex; gap: 10px; align-items: center; }
-    .chat-input {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--glass-border);
-      border-radius: 999px;
-      padding: 11px 18px;
-      color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-    .chat-input:focus { border-color: rgba(79, 168, 255, 0.5); }
-    .send-btn {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: #000;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: transform 0.18s var(--ease-snap), opacity 0.2s ease;
-    }
-    .send-btn:hover { transform: scale(1.08); }
-    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-    .cooldown-note {
-      font-size: 12px;
-      color: var(--danger);
-      text-align: center;
-      height: 16px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
     /* ── Guide Selector ──────────────────────────────────────── */
     .role-selector {
       width: 100%;
@@ -330,7 +74,6 @@
       justify-content: center;
     }
 
-    /* Subtle grid */
     .cam-visualizer::before {
       content: '';
       position: absolute;
@@ -357,7 +100,6 @@
       box-shadow: 0 0 18px var(--accent-glow);
       z-index: 2;
     }
-    /* Corner brackets */
     .cam-reticle::before,
     .cam-reticle::after {
       content: '';
@@ -368,7 +110,6 @@
     .cam-reticle::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
     .cam-reticle::after  { bottom: -2px; right: -2px; border-left: none; border-top: none; }
 
-    /* Animations */
     @keyframes fig8 {
       0%     { transform: translate(0, 0); }
       12.5%  { transform: translate(11px, -6px); }
@@ -416,32 +157,6 @@
 </head>
 <body>
 
-<!-- ── Chat Overlay ────────────────────────────────────────── -->
-<div id="chatOverlay">
-  <div class="chat-header">
-    <div class="chat-title">
-      <span class="dot-accent">✦</span> AI Assistant
-    </div>
-    <div class="chat-controls">
-      <button class="ctrl-btn" id="closeChat" aria-label="Close">✕</button>
-    </div>
-  </div>
-
-  <div class="chat-body" id="chatBody">
-    <div class="msg ai">
-      Hello! I'm your AV assistant. How can I help with production today?
-    </div>
-  </div>
-
-  <div class="chat-footer">
-    <div class="chat-input-row">
-      <input type="text" class="chat-input" id="chatInput" placeholder="Ask a question…" autocomplete="off">
-      <button class="send-btn" id="sendBtn" aria-label="Send">➤</button>
-    </div>
-    <div class="cooldown-note" id="cooldownNote">Please wait 5s between messages.</div>
-  </div>
-</div>
-
 <!-- ── Header ─────────────────────────────────────────────── -->
 <header>
   <div class="header-inner">
@@ -455,13 +170,6 @@
         <button data-nav="notes">Notes</button>
         <button data-nav="guides">Guides</button>
       </nav>
-    </div>
-
-    <div class="search-wrapper">
-      <div class="search-capsule" id="searchCapsule">
-        <div class="search-icon-btn">🔍</div>
-        <input type="text" class="search-field" id="searchField" placeholder="Ask AI…" autocomplete="off">
-      </div>
     </div>
 
     <div class="menu-wrapper">
@@ -497,7 +205,6 @@
 
 <script src="portal.js"></script>
 <script>
-/* ── Guides Data ───────────────────────────────────────────── */
 const GUIDES = {
   center_cam: `
     <h2>Center Camera — Main</h2>
@@ -549,9 +256,7 @@ const GUIDES = {
   `
 };
 
-/* ── Bootstrap ─────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Assign id's for initNav
   document.querySelector('[data-nav="notes"]').id  = 'notesBtn';
   document.querySelector('[data-nav="guides"]').id = 'guidesBtn';
 
@@ -564,12 +269,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initMenu();
   initNavResize();
-  initSearch();
-  initChat();
   initGuides();
 });
 
-/* ── Guide Selector ────────────────────────────────────────── */
 function initGuides() {
   const select  = document.getElementById('roleSelect');
   const display = document.getElementById('guideDisplay');
@@ -599,166 +301,6 @@ function initAnimBtns() {
         : 'cam-reticle anim-arc';
     });
   });
-}
-
-/* ── Search / Chat open ────────────────────────────────────── */
-function initSearch() {
-  const capsule = document.getElementById('searchCapsule');
-  const field   = document.getElementById('searchField');
-
-  capsule.addEventListener('click', () => {
-    if (!capsule.classList.contains('expanded')) {
-      capsule.classList.add('expanded');
-      setTimeout(() => field.focus(), 60);
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!capsule.contains(e.target)) capsule.classList.remove('expanded');
-  });
-
-  field.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { capsule.classList.remove('expanded'); field.blur(); }
-    if (e.key === 'Enter') {
-      const q = field.value.trim();
-      if (!q) return;
-      field.value = '';
-      capsule.classList.remove('expanded');
-      openChat(q);
-    }
-  });
-}
-
-/* ── Chat ──────────────────────────────────────────────────── */
-const API_KEYS = [
-  'AIzaSyDClTbooQVZiqntxARCYH8P0ijCrHKW-7U',
-  'AIzaSyAJD7tvvXw13CymrfOcwt8msPxzY1n_4lc'
-];
-
-let chatHistory = [];
-let lastMsg     = 0;
-const COOLDOWN  = 5000;
-
-function initChat() {
-  document.getElementById('closeChat').addEventListener('click', closeChat);
-  document.getElementById('sendBtn').addEventListener('click', sendChat);
-  document.getElementById('chatInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendChat();
-  });
-}
-
-function openChat(query) {
-  document.getElementById('chatOverlay').classList.add('active');
-  appendMsg('user', query);
-  callAI(query);
-}
-
-function closeChat() {
-  document.getElementById('chatOverlay').classList.remove('active');
-}
-
-function sendChat() {
-  const input = document.getElementById('chatInput');
-  const query = input.value.trim();
-  if (!query) return;
-
-  const now = Date.now();
-  if (now - lastMsg < COOLDOWN) {
-    const note = document.getElementById('cooldownNote');
-    note.style.opacity = '1';
-    setTimeout(() => { note.style.opacity = '0'; }, 2200);
-    return;
-  }
-  lastMsg = now;
-  input.value = '';
-  appendMsg('user', query);
-  callAI(query);
-}
-
-function appendMsg(role, text) {
-  const body = document.getElementById('chatBody');
-  const div  = document.createElement('div');
-  div.className = `msg ${role}`;
-
-  if (role === 'user') {
-    div.textContent = text;
-  } else {
-    revealWords(div, text);
-  }
-
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-  chatHistory.push({ role: role === 'user' ? 'user' : 'model', parts: [{ text }] });
-}
-
-function revealWords(el, text) {
-  text.split(' ').forEach((word, i) => {
-    const s = document.createElement('span');
-    s.className = 'word';
-    s.textContent = word + ' ';
-    el.appendChild(s);
-    setTimeout(() => {
-      s.classList.add('show');
-      document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
-    }, i * 28);
-  });
-}
-
-async function callAI(query) {
-  const body    = document.getElementById('chatBody');
-  const loader  = document.createElement('div');
-  loader.className = 'msg ai';
-  loader.id = 'loader';
-  loader.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
-  body.appendChild(loader);
-  body.scrollTop = body.scrollHeight;
-
-  const system = `You are an AV assistant for a production team. Available guides: center_cam, handheld_cam. To open a guide respond with [[OPEN_GUIDE:id]]. Keep responses concise and helpful. No markdown.`;
-  const contents = [
-    { role: 'user', parts: [{ text: system }] },
-    ...chatHistory
-  ];
-
-  let success = false;
-  for (const key of API_KEYS) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }) }
-      );
-      if (!res.ok) continue;
-      const data  = await res.json();
-      const text  = data.candidates[0].content.parts[0].text;
-
-      document.getElementById('loader')?.remove();
-
-      // Guide open action
-      const match = text.match(/\[\[OPEN_GUIDE:(.*?)\]\]/);
-      if (match) {
-        const guideId = match[1].trim();
-        const sysMsg  = document.createElement('div');
-        sysMsg.className = 'chat-system';
-        sysMsg.textContent = 'Opening guide…';
-        body.appendChild(sysMsg);
-        setTimeout(() => {
-          const sel = document.getElementById('roleSelect');
-          if (sel && GUIDES[guideId]) {
-            sel.value = guideId;
-            sel.dispatchEvent(new Event('change'));
-          }
-        }, 700);
-      }
-
-      appendMsg('ai', text.replace(/\[\[.*?\]\]/g, '').trim());
-      success = true;
-      break;
-    } catch { /* try next key */ }
-  }
-
-  if (!success) {
-    document.getElementById('loader')?.remove();
-    appendMsg('ai', "I'm having trouble connecting right now. Please try again.");
-  }
 }
 </script>
 </body>

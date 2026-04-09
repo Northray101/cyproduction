@@ -77,56 +77,104 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: var(--bg);
       display: none;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    #loginOverlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+    #loginOverlay::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,168,255,0.06) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse-bg 6s ease-in-out infinite;
+    }
+    @keyframes pulse-bg {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+      50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
     }
 
     .login-box {
+      position: relative;
+      z-index: 1;
       width: 90%;
-      max-width: 300px;
+      max-width: 320px;
       text-align: center;
-      animation: page-in 0.5s var(--ease-spring) both;
+      animation: login-enter 0.6s var(--ease-spring) both;
     }
-    .login-box img { width: 52px; margin-bottom: 18px; }
+    @keyframes login-enter {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .login-logo {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 20px;
+      display: block;
+      animation: login-enter 0.6s var(--ease-spring) 0.05s both;
+    }
+
     .login-box h2 {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
+      letter-spacing: -0.025em;
+      margin-bottom: 4px;
+      color: var(--text);
+      animation: login-enter 0.6s var(--ease-spring) 0.1s both;
     }
     .login-box .sub {
       color: var(--muted);
-      font-size: 13.5px;
-      margin-bottom: 28px;
+      font-size: 13px;
+      margin-bottom: 32px;
+      animation: login-enter 0.6s var(--ease-spring) 0.14s both;
     }
 
+    /* Dots */
     .dots {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 28px;
+      gap: 14px;
+      margin-bottom: 32px;
+      animation: login-enter 0.6s var(--ease-spring) 0.18s both;
     }
     .dot {
-      width: 13px;
-      height: 13px;
+      width: 11px;
+      height: 11px;
       border-radius: 50%;
-      border: 2px solid var(--subtle);
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s var(--ease-snap);
+      border: 1.5px solid var(--subtle);
+      transition:
+        background 0.22s var(--ease-snap),
+        border-color 0.22s ease,
+        transform 0.22s var(--ease-snap),
+        box-shadow 0.22s ease;
     }
     .dot.filled {
       background: var(--accent);
       border-color: var(--accent);
-      transform: scale(1.15);
-      animation: pulse-ring 0.5s ease;
+      transform: scale(1.2);
+      box-shadow: 0 0 12px rgba(79,168,255,0.45);
     }
 
+    /* Keypad */
     .keypad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+      gap: 10px;
+      animation: login-enter 0.6s var(--ease-spring) 0.22s both;
     }
     .key {
       aspect-ratio: 1;
@@ -135,39 +183,56 @@
       border: 1px solid var(--glass-border);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 500;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       user-select: none;
-      transition: background 0.12s ease, transform 0.1s ease;
+      -webkit-user-select: none;
+      position: relative;
+      overflow: hidden;
+      transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.12s var(--ease-snap);
     }
+    .key::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, rgba(79,168,255,0.18) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .key:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .key:hover::after { opacity: 1; }
     .key:active {
-      background: rgba(255, 255, 255, 0.14);
-      transform: scale(0.93);
+      transform: scale(0.9);
+      background: rgba(79,168,255,0.1);
+      border-color: rgba(79,168,255,0.3);
     }
     .key.empty { visibility: hidden; pointer-events: none; }
 
     .error-msg {
       color: var(--danger);
-      font-size: 13px;
-      margin-top: 16px;
-      height: 18px;
+      font-size: 12.5px;
+      margin-top: 18px;
+      height: 16px;
       opacity: 0;
       transition: opacity 0.25s ease;
+      letter-spacing: 0.01em;
     }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60%  { transform: translateX(-9px); }
-      40%, 80%  { transform: translateX(9px); }
-    }
-    .shake { animation: shake 0.38s ease-in-out; }
 
     .back-link {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       margin-top: 28px;
       background: transparent;
       border: 1px solid var(--glass-border);
@@ -176,11 +241,24 @@
       border-radius: 999px;
       cursor: pointer;
       font-family: 'Outfit', sans-serif;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 500;
-      transition: background var(--transition-base), color var(--transition-base);
+      transition: background var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+      text-decoration: none;
+      animation: login-enter 0.6s var(--ease-spring) 0.28s both;
     }
-    .back-link:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+    .back-link:hover {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60%  { transform: translateX(-8px); }
+      40%, 80%  { transform: translateX(8px); }
+    }
+    .shake { animation: shake 0.36s ease-in-out; }
 
     /* ── Doc Content ─────────────────────────────────────────── */
     .doc-content {
@@ -220,7 +298,7 @@
       vertical-align: top;
     }
 
-    /* ── Mobile additions ────────────────────────────────────── */
+    /* ── Mobile ──────────────────────────────────────────────── */
     @media (max-width: 768px) {
       .signout-wrapper {
         position: absolute;
@@ -236,7 +314,7 @@
 <!-- ── Login Overlay ──────────────────────────────────────── -->
 <div id="loginOverlay">
   <div class="login-box" id="loginBox">
-    <img src="cy.png" alt="CY">
+    <img src="cy.png" alt="CY" class="login-logo">
     <h2>Portal Access</h2>
     <p class="sub">Enter team passcode</p>
 
@@ -263,7 +341,7 @@
     </div>
 
     <p id="errorMsg" class="error-msg">Incorrect passcode</p>
-    <button class="back-link" onclick="window.location.href='index.html'">← Back to Home</button>
+    <a class="back-link" href="index.html">← Back to Home</a>
   </div>
 </div>
 
@@ -321,21 +399,18 @@
 
 <script src="portal.js"></script>
 <script>
-/* ── Bootstrap ─────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  initNav({
-    activeId: 'notesBtn',   // set dynamically below
-    routes: {
-      guides: () => setTimeout(() => { window.location.href = 'guides.html'; }, 380)
-    }
-  });
-
-  // Fix: button id's come from data-nav now — update initNav to not rely on id
-  // We'll set active class manually here
   const notesBtn = document.querySelector('[data-nav="notes"]');
   if (notesBtn) notesBtn.id = 'notesBtn';
   const guidesBtn = document.querySelector('[data-nav="guides"]');
   if (guidesBtn) guidesBtn.id = 'guidesBtn';
+
+  initNav({
+    activeId: 'notesBtn',
+    routes: {
+      guides: () => setTimeout(() => { window.location.href = 'guides.html'; }, 380)
+    }
+  });
 
   initMenu();
   initNavResize();
@@ -383,7 +458,6 @@ function initLogin() {
   const PASS_DIR = '6464';
   let input = '';
 
-  // Check cached auth
   const cached = localStorage.getItem('cy_portal_role');
   if (cached === 'Volunteer' || cached === 'Director') {
     loadContent(cached);
@@ -391,7 +465,6 @@ function initLogin() {
     overlay.style.display = 'flex';
   }
 
-  // Keypad clicks
   document.querySelectorAll('.key[data-k]').forEach(key => {
     key.addEventListener('click', () => {
       const k = key.dataset.k;
@@ -400,7 +473,6 @@ function initLogin() {
     });
   });
 
-  // Physical keyboard
   document.addEventListener('keydown', (e) => {
     if (overlay.style.display === 'none') return;
     if (e.key >= '0' && e.key <= '9' && input.length < 4) {
@@ -427,18 +499,30 @@ function initLogin() {
     else {
       errorEl.style.opacity = '1';
       loginBox.classList.add('shake');
+      // Ripple the dots red briefly
+      dotsEl.querySelectorAll('.dot').forEach(d => {
+        d.style.background = 'var(--danger)';
+        d.style.borderColor = 'var(--danger)';
+        d.style.boxShadow = '0 0 10px rgba(255,90,90,0.4)';
+      });
       setTimeout(() => {
         loginBox.classList.remove('shake');
-        input = ''; render();
-      }, 400);
+        input = '';
+        render();
+        dotsEl.querySelectorAll('.dot').forEach(d => {
+          d.style.background = '';
+          d.style.borderColor = '';
+          d.style.boxShadow = '';
+        });
+      }, 500);
     }
   }
 
   function unlock(role) {
     localStorage.setItem('cy_portal_role', role);
-    overlay.style.transition = 'opacity 0.45s ease';
+    overlay.style.transition = 'opacity 0.5s ease';
     overlay.style.opacity = '0';
-    setTimeout(() => { overlay.style.display = 'none'; }, 450);
+    setTimeout(() => { overlay.style.display = 'none'; }, 500);
     loadContent(role);
   }
 }
