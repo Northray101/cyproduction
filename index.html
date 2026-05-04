@@ -1,315 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Community Youth Retro Games</title>
-    <style>
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-        canvas { image-rendering: pixelated; border: 3px solid #fff; }
-        #info { color: #fff; font-family: monospace; margin-bottom: 10px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Youth</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=DM+Mono:wght@500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'DM Mono', monospace;
+      background: #111;
+    }
+
+    /* ── Background ── */
+    #bg {
+      position: fixed; inset: 0;
+      background-image: url('background.png');
+      background-size: cover;
+      background-position: center;
+      z-index: 0;
+    }
+    #bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.45);
+    }
+
+    /* ── 16:9 Viewport ── */
+    #stage {
+      position: fixed; inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    #screen {
+      position: relative;
+      width: min(100vw, calc(100vh * 16/9));
+      height: min(100vh, calc(100vw * 9/16));
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 5%;
+      gap: 2vh;
+    }
+
+    /* ── Title ── */
+    .title-block {
+      background: #ffd23f;
+      border: 4px solid #111;
+      box-shadow: 7px 7px 0 #111;
+      padding: 0.5em 1em;
+      display: inline-block;
+      margin-bottom: 1vh;
+    }
+    .title-block h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 5rem);
+      color: #111;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+    .title-block .sub {
+      font-size: clamp(0.6rem, 1.3vw, 1.1rem);
+      color: #111;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      margin-top: 0.2em;
+    }
+
+    /* ── Menu ── */
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2vh;
+    }
+    .neo-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(0.85rem, 1.8vw, 1.5rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.55em 1.6em;
+      border: 3px solid #111;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 5px 5px 0 #111;
+      transform: translate(0,0);
+      background: #fff;
+      color: #111;
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      width: fit-content;
+    }
+    .neo-btn .icon { font-size: 1.1em; }
+    .neo-btn:hover  { transform: translate(-3px,-3px); box-shadow: 8px 8px 0 #111; }
+    .neo-btn:active { transform: translate(1px,1px);  box-shadow: 2px 2px 0 #111; }
+
+    .neo-btn.play    { background: #ff006e; color: #fff; border-color: #111; }
+    .neo-btn.music   { background: #8338ec; color: #fff; }
+    .neo-btn.guides  { background: #3a86ff; color: #fff; }
+    .neo-btn.contact { background: #ffd23f; color: #111; }
+
+    /* ── Footer tag ── */
+    .tag {
+      position: absolute;
+      bottom: 4%;
+      right: 4%;
+      background: #111;
+      color: #ffd23f;
+      font-size: clamp(0.5rem, 1vw, 0.8rem);
+      padding: 0.4em 0.8em;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: 2px solid #ffd23f;
+    }
+
+    /* ── Noise overlay for texture ── */
+    #noise {
+      position: fixed; inset: 0; z-index: 2;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+  </style>
 </head>
 <body>
-    <div id="info">Community Youth Mini Games</div>
-    <canvas id="game" width="320" height="240"></canvas>
-    <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
 
-        // Web Audio for 8-bit chiptune sounds
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(freq = 440, duration = 0.1, type = 'square') {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = freq;
-            osc.type = type;
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + duration);
-        }
+  <div id="bg"></div>
+  <div id="noise"></div>
 
-        // Background music loop (simple chiptune melody)
-        const melody = [262, 294, 330, 349, 392, 440, 494, 523];
-        let melodyIdx = 0;
-        function playMelody() {
-            beep(melody[melodyIdx % melody.length], 0.18, 'square');
-            melodyIdx++;
-        }
-        setInterval(playMelody, 300);
+  <div id="stage">
+    <div id="screen">
 
-        // Input
-        const keys = {};
-        window.addEventListener('keydown', e => { keys[e.key] = true; audioCtx.resume(); });
-        window.addEventListener('keyup', e => keys[e.key] = false);
+      <div class="title-block">
+        <h1>Community Youth</h1>
+        <div class="sub">Production Hub</div>
+      </div>
 
-        // --- CHARACTERS (Community Youth placeholders) ---
-        const characters = [
-            { name: 'Alex', color: '#f00' },
-            { name: 'Jordan', color: '#0ff' },
-            { name: 'Taylor', color: '#ff0' },
-            { name: 'Morgan', color: '#f0f' },
-        ];
-        let charIdx = 0;
+      <nav class="menu">
+        <button class="neo-btn play"    onclick="go('games.html')"><span class="icon">▶</span> Play Games</button>
+        <button class="neo-btn music"   onclick="go('Music/')"><span class="icon">♪</span> Music</button>
+        <button class="neo-btn guides"  onclick="go('guides.html')"><span class="icon">☰</span> Guides</button>
+        <button class="neo-btn contact" onclick="go('portal.html')"><span class="icon">⊞</span> Portal</button>
+      </nav>
 
-        // --- MINI GAME 1: JUMP ---
-        let playerY = 185, velY = 0, obstacleX = 320, jumped = false;
-        let jumpScore = 0;
-        function jumpReset() { playerY = 185; velY = 0; obstacleX = 320; jumped = false; }
-        function jumpUpdate() {
-            if ((keys['ArrowUp'] || keys[' ']) && playerY >= 185) { velY = -6; beep(659, 0.05); }
-            velY += 0.35;
-            playerY += velY;
-            if (playerY > 185) { playerY = 185; velY = 0; }
-            obstacleX -= 3;
-            if (obstacleX < -30) { obstacleX = 320 + Math.random() * 100; jumpScore++; beep(523, 0.1); }
-        }
-        function jumpDraw() {
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, 320, 240);
-            ctx.fillStyle = '#555';
-            ctx.fillRect(0, 200, 320, 40);
-            // Player
-            ctx.fillStyle = characters[charIdx].color;
-            ctx.fillRect(50, playerY, 20, 20);
-            // Eyes
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(55, playerY + 4, 4, 4);
-            ctx.fillRect(63, playerY + 4, 4, 4);
-            // Obstacle (cactus-like)
-            ctx.fillStyle = '#0f0';
-            ctx.fillRect(obstacleX, 185, 18, 15);
-            ctx.fillRect(obstacleX + 5, 175, 8, 12);
-            // Ground line
-            ctx.fillStyle = '#888';
-            ctx.fillRect(0, 200, 320, 2);
-            ctx.fillStyle = '#fff';
-            ctx.font = '8px monospace';
-            ctx.fillText(`JUMP! [SPACE/UP]  Cleared: ${jumpScore}`, 10, 12);
-            ctx.fillText(`${characters[charIdx].name}`, 10, 230);
-        }
+      <div class="tag">Corona, CA · 2026</div>
+    </div>
+  </div>
 
-        // --- MINI GAME 2: CATCH ---
-        let basketX = 140;
-        let balls = [];
-        let catchScore = 0;
-        let missCount = 0;
-        function catchReset() { basketX = 140; balls = []; catchScore = 0; missCount = 0; }
-        function spawnBall() {
-            if (Math.random() < 0.03) balls.push({ x: Math.random() * 290, y: 0, speed: 2 + Math.random() * 2 });
-        }
-        function catchUpdate() {
-            if (keys['ArrowLeft']) basketX = Math.max(0, basketX - 4);
-            if (keys['ArrowRight']) basketX = Math.min(280, basketX + 4);
-            spawnBall();
-            balls = balls.filter(b => {
-                b.y += b.speed;
-                if (b.y > 210 && b.y < 225 && b.x > basketX && b.x < basketX + 40) {
-                    catchScore++;
-                    beep(784, 0.07);
-                    return false;
-                }
-                if (b.y > 240) { missCount++; return false; }
-                return true;
-            });
-        }
-        function catchDraw() {
-            ctx.fillStyle = '#001133';
-            ctx.fillRect(0, 0, 320, 240);
-            // Stars
-            ctx.fillStyle = '#fff';
-            for (let i = 0; i < 20; i++) ctx.fillRect((i * 47) % 320, (i * 31) % 160, 2, 2);
-            // Balls
-            balls.forEach(b => {
-                ctx.fillStyle = '#ffaa00';
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            // Basket (character colored)
-            ctx.fillStyle = characters[charIdx].color;
-            ctx.fillRect(basketX, 215, 40, 10);
-            ctx.fillStyle = '#fff';
-            ctx.font = '8px monospace';
-            ctx.fillText(`CATCH! [LEFT/RIGHT]  Score: ${catchScore}  Miss: ${missCount}`, 10, 12);
-            ctx.fillText(`${characters[charIdx].name}`, 10, 230);
-        }
+  <script>
+    function go(href) {
+      const a = new (window.AudioContext || window.webkitAudioContext)();
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.connect(g); g.connect(a.destination);
+      o.type = 'square'; o.frequency.value = 440;
+      g.gain.setValueAtTime(0.08, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.12);
+      o.start(); o.stop(a.currentTime + 0.12);
+      setTimeout(() => window.location.href = href, 130);
+    }
 
-        // --- MINI GAME 3: DODGE ---
-        let dodgeX = 150, dodgeBullets = [];
-        let dodgeScore = 0;
-        let dodgeAlive = true;
-        function dodgeReset() { dodgeX = 150; dodgeBullets = []; dodgeScore = 0; dodgeAlive = true; }
-        function spawnDodge() {
-            if (Math.random() < 0.04) dodgeBullets.push({ x: Math.random() * 295, y: 0, speed: 2 + Math.random() * 3 });
-        }
-        function dodgeUpdate() {
-            if (!dodgeAlive) return;
-            if (keys['ArrowLeft']) dodgeX = Math.max(0, dodgeX - 4);
-            if (keys['ArrowRight']) dodgeX = Math.min(300, dodgeX + 4);
-            spawnDodge();
-            dodgeBullets = dodgeBullets.filter(b => {
-                b.y += b.speed;
-                if (b.y > 200 && b.x > dodgeX - 5 && b.x < dodgeX + 25) {
-                    dodgeAlive = false;
-                    beep(110, 0.3);
-                    return false;
-                }
-                return b.y < 240;
-            });
-            if (dodgeAlive) dodgeScore++;
-        }
-        function dodgeDraw() {
-            ctx.fillStyle = '#110011';
-            ctx.fillRect(0, 0, 320, 240);
-            // Player
-            ctx.fillStyle = dodgeAlive ? characters[charIdx].color : '#444';
-            ctx.fillRect(dodgeX, 200, 20, 20);
-            // Bullets
-            dodgeBullets.forEach(b => {
-                ctx.fillStyle = '#ff4400';
-                ctx.fillRect(b.x, b.y, 8, 8);
-            });
-            ctx.fillStyle = '#fff';
-            ctx.font = '8px monospace';
-            ctx.fillText(`DODGE! [LEFT/RIGHT]  Score: ${dodgeScore}`, 10, 12);
-            if (!dodgeAlive) ctx.fillText('HIT! SWITCHING...', 80, 120);
-            ctx.fillText(`${characters[charIdx].name}`, 10, 230);
-        }
-
-        // --- GAME STATE MACHINE ---
-        const miniGames = [
-            { name: 'Jump', reset: jumpReset, update: jumpUpdate, draw: jumpDraw },
-            { name: 'Catch', reset: catchReset, update: catchUpdate, draw: catchDraw },
-            { name: 'Dodge', reset: dodgeReset, update: dodgeUpdate, draw: dodgeDraw },
-        ];
-
-        let currentGame = 0;
-        let gameTimer = 0;
-        const GAME_DURATION = 60 * 12; // 12 seconds at 60fps
-        let totalScore = 0;
-
-        // Screen states: 'title', 'playing', 'scoreboard'
-        let state = 'title';
-
-        miniGames.forEach(g => g.reset());
-
-        function drawTitle() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 320, 240);
-            // Pixel border
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(10, 10, 300, 220);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(14, 14, 292, 212);
-
-            ctx.fillStyle = '#ffff00';
-            ctx.font = 'bold 16px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('COMMUNITY YOUTH', 160, 70);
-            ctx.fillStyle = '#00ffff';
-            ctx.font = '12px monospace';
-            ctx.fillText('RETRO GAMES', 160, 92);
-
-            ctx.fillStyle = '#fff';
-            ctx.font = '9px monospace';
-            ctx.fillText('PRESS ANY KEY TO START', 160, 140);
-
-            // Draw character previews
-            const colors = ['#f00', '#0ff', '#ff0', '#f0f'];
-            const names = ['ALEX', 'JORDAN', 'TAYLOR', 'MORGAN'];
-            for (let i = 0; i < 4; i++) {
-                ctx.fillStyle = colors[i];
-                ctx.fillRect(40 + i * 65, 160, 20, 20);
-                ctx.fillStyle = '#fff';
-                ctx.font = '7px monospace';
-                ctx.fillText(names[i], 40 + i * 65 - 5, 195);
-            }
-            ctx.textAlign = 'left';
-        }
-
-        function drawScoreboard() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 320, 240);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(10, 10, 300, 220);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(14, 14, 292, 212);
-            ctx.fillStyle = '#ffff00';
-            ctx.font = 'bold 14px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', 160, 60);
-            ctx.fillStyle = '#fff';
-            ctx.font = '11px monospace';
-            ctx.fillText(`SCORE: ${totalScore}`, 160, 100);
-            ctx.fillText('PRESS ANY KEY', 160, 160);
-            ctx.fillText('TO PLAY AGAIN', 160, 178);
-            ctx.textAlign = 'left';
-        }
-
-        let gamesPlayed = 0;
-        const TOTAL_ROUNDS = miniGames.length * 2;
-
-        function nextGame() {
-            gamesPlayed++;
-            if (gamesPlayed >= TOTAL_ROUNDS) {
-                state = 'scoreboard';
-                return;
-            }
-            currentGame = gamesPlayed % miniGames.length;
-            charIdx = (charIdx + 1) % characters.length;
-            miniGames[currentGame].reset();
-            gameTimer = 0;
-            beep(392, 0.15);
-        }
-
-        window.addEventListener('keydown', () => {
-            if (state === 'title') { state = 'playing'; audioCtx.resume(); }
-            else if (state === 'scoreboard') {
-                state = 'title';
-                gamesPlayed = 0;
-                totalScore = 0;
-                charIdx = 0;
-                currentGame = 0;
-                miniGames.forEach(g => g.reset());
-            }
-        });
-
-        function loop() {
-            if (state === 'title') {
-                drawTitle();
-            } else if (state === 'playing') {
-                miniGames[currentGame].update();
-                miniGames[currentGame].draw();
-
-                // Timer bar
-                const ratio = 1 - gameTimer / GAME_DURATION;
-                ctx.fillStyle = ratio > 0.3 ? '#0f0' : '#f00';
-                ctx.fillRect(0, 236, 320 * ratio, 4);
-
-                // Game label
-                ctx.fillStyle = '#fff';
-                ctx.font = '7px monospace';
-                ctx.fillText(`GAME ${gamesPlayed + 1}/${TOTAL_ROUNDS}`, 245, 232);
-
-                gameTimer++;
-                if (gameTimer >= GAME_DURATION) {
-                    // Tally score
-                    if (currentGame === 0) totalScore += jumpScore;
-                    if (currentGame === 1) totalScore += catchScore;
-                    if (currentGame === 2) totalScore += dodgeScore;
-                    nextGame();
-                }
-            } else if (state === 'scoreboard') {
-                drawScoreboard();
-            }
-
-            requestAnimationFrame(loop);
-        }
-
-        loop();
-    </script>
+    // Hover sound
+    document.querySelectorAll('.neo-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        const a = new (window.AudioContext || window.webkitAudioContext)();
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.connect(g); g.connect(a.destination);
+        o.type = 'square'; o.frequency.value = 300;
+        g.gain.setValueAtTime(0.04, a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.07);
+        o.start(); o.stop(a.currentTime + 0.07);
+      });
+    });
+  </script>
 </body>
 </html>
